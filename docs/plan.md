@@ -140,7 +140,7 @@ Each endpoint is one task, done test-first like step 3: a red commit with its in
 | Task | Work | Code by | Files |
 |------|------|---------|-------|
 | T4.1 | DbContext and EF configuration (D36–D38); database created on start (D18); "today" from the configured time zone (D15) | AI | `Data/` · `Services/` · `Program.cs` |
-| T4.2 | Seed data (D33), with a test that it matches the brief's table | AI | `Data/` · `tests/Api/` |
+| T4.2 | Seed data (D33, D39, D40), with tests that it matches the brief's table | AI | `Data/` · `Program.cs` · `tests/Data/` |
 | T4.3 | API foundation: services, enums as strings, domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
 | T4.4 | `GET /grants` (status filter, pending task count) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
 | T4.5 | `GET /grants/{id}` | AI | same |
@@ -204,3 +204,5 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D36 | Column lengths: Title 100 (BR-3, same constant as the domain) · IdempotencyKey 36 (a UUID; the API accepts only UUIDs) · ReferenceNumber 9 (`GR-` + 6 digits as in the brief; widen with a migration if needed) · OrganisationName 200 (the Australian Business Register limit, ABR data dictionary 9.9.7) | Every length has a source; none is padding. |
 | D37 | Indexes: ReferenceNumber unique · IdempotencyKey unique where not null · GrantId · DueDate | Unique reference; one task per retried request even under concurrency; fast task loading per grant; fast overdue list (OP-6). |
 | D38 | Deleting a grant that still has tasks is restricted, not cascaded | The brief has no delete and ends a grant by closing it; support and reporting need history (OP-4, OP-6), so tasks are never lost silently. |
+| D39 | Seed data is added only in Development, right after the database is recreated | The brief's data is fictional; a real office must never see sample grants. `dotnet run` uses Development, so reviewers still get the seed. |
+| D40 | Seeded tasks get `CreatedAt` = their grant's application date at 00:00 UTC | Matches D33's replayed history (each task is added on the application date), and the seed needs only "today". |
