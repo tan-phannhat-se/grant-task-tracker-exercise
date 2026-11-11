@@ -74,6 +74,15 @@ public class GrantTask
     }
 
     /// <summary>
+    /// True when this task is what an "add task" request with these values would have created.
+    /// </summary>
+    public bool MatchesRequest(int grantId, string title, DateOnly dueDate, Priority priority)
+    {
+        // The title was saved trimmed, so the request's title is trimmed before comparing.
+        return GrantId == grantId && Title == title.Trim() && DueDate == dueDate && Priority == priority;
+    }
+
+    /// <summary>
     /// True when the task was completed after its due date. Not the same as overdue: a late task is done.
     /// </summary>
     public bool IsCompletedLate => CompletedDate > DueDate; // false while pending: null > date is false

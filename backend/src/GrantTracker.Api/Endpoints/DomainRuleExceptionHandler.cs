@@ -20,7 +20,7 @@ public sealed class DomainRuleExceptionHandler : IExceptionHandler
     }
 
     /// <summary>
-    /// Writes a 400, 404 or 409 ProblemDetails for a domain rule error; leaves any other exception unhandled.
+    /// Writes a 400, 404, 409 or 422 ProblemDetails for a domain rule error; leaves any other exception unhandled.
     /// </summary>
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -37,6 +37,7 @@ public sealed class DomainRuleExceptionHandler : IExceptionHandler
             DomainErrorKind.Validation => StatusCodes.Status400BadRequest,
             DomainErrorKind.RuleRefused => StatusCodes.Status409Conflict,
             DomainErrorKind.NotFound => StatusCodes.Status404NotFound,
+            DomainErrorKind.RequestMismatch => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status500InternalServerError, // a new kind without a status yet
         };
 

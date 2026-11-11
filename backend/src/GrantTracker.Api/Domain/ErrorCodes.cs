@@ -16,4 +16,6 @@ public static class ErrorCodes
     public const string GrantNotFound = "grant-not-found";
     public const string TaskNotFound = "task-not-found";
     public const string StatusInvalid = "status-invalid"; // grant list filter: Open, Closed or All
+    public const string IdempotencyKeyInvalid = "idempotency-key-invalid"; // the Idempotency-Key header is not a UUID
+    public const string IdempotencyKeyReused = "idempotency-key-reused"; // the key was used for a different request
 }

@@ -52,16 +52,36 @@ public class GrantService
     }
 
     /// <summary>
-    /// Adds a task to a grant through the domain rules, then saves it.
+    /// Adds a task to a grant through the domain rules and saves it, or returns the task an earlier request
+    /// with the same idempotency key added.
     /// </summary>
-    public async Task<GrantTask> AddTaskAsync(int grantId, string title, DateOnly dueDate, Priority priority)
+    public async Task<AddTaskResult> AddTaskAsync(
+        int grantId,
+        string title,
+        DateOnly dueDate,
+        Priority priority,
+        string? idempotencyKey)
     {
+        // The key is looked up before the grant and its rules: the earlier request worked,
+        // so its retry must too, even if the grant has been closed since.
+        if (idempotencyKey is not null)
+        {
+            var earlierTask = await _db.GrantTasks.SingleOrDefaultAsync(t => t.IdempotencyKey == idempotencyKey);
+            if (earlierTask is not null)
+            {
+                return earlierTask.MatchesRequest(grantId, title, dueDate, priority)
+                    ? new AddTaskResult(earlierTask, IsRetry: true)
+                    : throw KeyReused();
+            }
+        }
+
         // Tasks are not loaded: adding one needs only the grant's status and application date.
         var grant = await _db.Grants.SingleOrDefaultAsync(g => g.Id == grantId) ?? throw GrantNotFound(grantId);
 
-        var task = grant.AddTask(title, dueDate, priority, _calendar.Today(), _timeProvider.GetUtcNow().UtcDateTime);
+        var task = grant.AddTask(
+            title, dueDate, priority, _calendar.Today(), _timeProvider.GetUtcNow().UtcDateTime, idempotencyKey);
         await _db.SaveChangesAsync();
-        return task;
+        return new AddTaskResult(task, IsRetry: false);
     }
 
     /// <summary>
@@ -83,4 +103,10 @@ public class GrantService
         ErrorCodes.GrantNotFound,
         DomainErrorKind.NotFound,
         $"Grant {id} was not found.");
+
+    // The message never describes the earlier task: it may belong to another grant.
+    private static DomainRuleException KeyReused() => new(
+        ErrorCodes.IdempotencyKeyReused,
+        DomainErrorKind.RequestMismatch,
+        "This Idempotency-Key was already used for a different request. Send a new key.");
 }

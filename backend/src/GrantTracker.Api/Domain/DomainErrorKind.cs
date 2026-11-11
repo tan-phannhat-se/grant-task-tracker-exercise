@@ -8,4 +8,5 @@ public enum DomainErrorKind
     Validation = 100, // bad input, the caller can fix it → 400
     RuleRefused = 200, // the input is fine, the current state forbids it → 409
     NotFound = 300, // the grant or task asked for does not exist → 404
+    RequestMismatch = 400, // an idempotency key already used for a different request → 422
 }
