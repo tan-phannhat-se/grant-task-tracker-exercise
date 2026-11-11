@@ -162,6 +162,7 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 - Step 6 (OP-3): accept only a 36-character UUID as the key (D36); a missing key is allowed (D7) and just means no duplicate protection.
 - Step 7 (README, security / before going live): the idempotency key is for safe retries, not security; add authentication and scope keys per user before going live.
 - Step 5 (screen): a task completed late shows a "Completed late" label (D26).
+- Step 7 (README, known issues): on .NET 8 the exception middleware logs every handled 400/409 as an "unhandled exception" Error, so logs are noisy for support (OP-4). Accepted (tan: a fix would be over-engineering); .NET 10 can turn this off.
 
 ## Decisions
 | # | Decision | Why |
@@ -209,3 +210,5 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D41 | `Grant.PendingTaskCount` is computed in the domain; the service loads each grant with its tasks | "Pending" is defined in one place (`IsCompleted`). Trade-off: tasks are loaded only to count them; count in SQL once data grows (README). |
 | D42 | `GET /grants?status=Open\|Closed\|All`, case-insensitive; missing = all; anything else (including numbers such as `100`) → 400 `status-invalid` on `status` | Same filter values as the overdue list (D14); a number would otherwise bind to an enum value silently. |
 | D43 | The grant list is ordered by reference number | A stable, predictable order for the screen and the tests. |
+| D44 | Bad HTTP input (e.g. an unknown `status` filter, a missing field) is reported by throwing `DomainRuleException` with kind Validation; its code goes into `ErrorCodes` | One handler builds every 400/409 body, so all errors have the same shape (D27). Trade-off: the class name says "domain rule" for an input check. |
+| D45 | `Endpoints/` keeps the endpoint classes (one partial class per route group: handlers, `.Routes`, filters) and the error handler; request types go in `Endpoints/Requests/`, response types in `Endpoints/Responses/` | About 13 files expected by the end of step 4. Grouping by kind keeps a shared type such as a task response in one place; grouping by feature would not. |

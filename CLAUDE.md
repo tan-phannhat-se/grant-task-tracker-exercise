@@ -34,7 +34,9 @@ backend/src/GrantTracker.Api/
   Domain/     entities and business rules BR-1..BR-6. No EF Core, no HTTP, no clock.
   Services/   use cases: load from DbContext, call the domain, save. Gets "today" from TimeProvider.
   Data/       DbContext, EF configuration, seed data.
-  Endpoints/  HTTP mapping only: request/response types, status codes, ProblemDetails.
+  Endpoints/  HTTP mapping only: routes and handlers, status codes, ProblemDetails.
+    Requests/   request body types
+    Responses/  response types
 backend/tests/GrantTracker.Tests/
   Domain/     unit tests of the rules (no database)
   Services/   unit tests of services that need no database (e.g. today in the configured time zone)
