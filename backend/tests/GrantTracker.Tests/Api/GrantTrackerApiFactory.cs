@@ -22,6 +22,9 @@ public sealed class GrantTrackerApiFactory : WebApplicationFactory<Program>
     // gives every test its own database.
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
+    // The app's clock; a test can move it, e.g. to the next day.
+    public FakeTimeProvider Clock { get; } = new(Now);
+
     /// <summary>
     /// Opens the connection the test database lives on.
     /// </summary>
@@ -41,7 +44,7 @@ public sealed class GrantTrackerApiFactory : WebApplicationFactory<Program>
             services.AddDbContext<GrantTrackerDbContext>(options => options.UseSqlite(_connection));
 
             services.RemoveAll<TimeProvider>();
-            services.AddSingleton<TimeProvider>(new FakeTimeProvider(Now));
+            services.AddSingleton<TimeProvider>(Clock);
         });
     }
 
