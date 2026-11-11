@@ -1,90 +1,81 @@
-# Work log · Step 5 · Frontend · 2026-11-12 (in progress)
+# Work log · Step 5 · Frontend · 2026-11-12 (done)
 **Done:**
-- Plan approved: D50–D54 (layout, where errors show, closed grant, client checks, API types in one module); tasks T5.1–T5.6 in `plan.md`
-- Real responses checked with `curl` before writing the client: shapes match D35; the empty-body 400 has no `Content-Type`
-- T5.1 red: API-1..3; `grantsApi.ts` stub throws
-- T5.1 green: `send` (one place for fetch and errors), `toApiError` (reads the body only when it is ProblemDetails), four calls; D50 adds "opens on the first grant" (tan chose)
-- T5.2 red: FE-1 (screen, fake `fetch` by URL; also checks the "Closed" status shows) · FE-2..4 (`TaskList` alone, no `fetch`); `GrantTasksScreen` and `TaskList` stubs render nothing
-- T5.2 green: `TaskList` (row class `overdue` + "Overdue" text label, Complete button not wired yet), `GrantTasksScreen` (loads grants, opens on the first, reloads on change; an older answer cannot replace a newer one), `App.tsx`, `index.css`
-- Tried in the browser with the real API: GR-100001 opens with "Verify bank details" highlighted; GR-100003 shows Closed; GR-100004 shows an empty table
-- FE-12 (tan asked): a grant with no tasks shows "No tasks yet."; red seen first, then green; D50 updated
-- T5.3 red: FE-5 (fake API answers PUT with a completed date long past); `TaskList` gets an `onComplete` prop, the screen passes a stub that does nothing
-- T5.3 green: Complete calls the API and puts the returned task in its row; D51 extended (tan chose: errors outside the form go in the box at the top of the screen)
-- FE-13 (needed by that choice): test written, seen red (error swallowed), then `catch` added; `loadError` renamed `screenError`
-- Tried in the browser: Complete on "Verify bank details" → "Completed on 2026-11-11" + "Completed late", highlight gone (the server's today is UTC, the default time zone)
-- T5.4 red: FE-6 (2 inputs), FE-7a, FE-7b (100 characters with spaces around, so it also catches "counted before trimming"), FE-8; `AddTaskForm` stub renders nothing. Checked first that `user.type` fills a date input in jsdom (throwaway test, deleted)
-- D51's extension was committed inside step 6's commit `768362f` (shared `plan.md`)
-- T5.4 green: `AddTaskForm` (title trimmed then checked, due date required, priority starts at Medium; errors linked to their input with `aria-describedby`; sends with `addTask`); D53 adds "Priority starts at Medium" (tan chose)
-- T5.5 red: FE-9, FE-10 (`AddTaskForm` alone), FE-11 (screen; the fake API now adds tasks, with fresh data for each test so no test sees another's task)
-- `./test.sh` checks frontend lines over 100 characters (tan approved); counted in UTF-8 because `bash` grep counts bytes by default; the 10 long comment lines wrapped
-- T5.5 green: `AddTaskForm` shows API errors (one `switch` on `field`: under Title, under Due date, else at the top of the form), empties title and date after adding (priority kept); the screen shows the form and reloads the grant after adding; a new form per grant (`key`), so input never carries over; form labels on their own lines (`index.css`)
-- Tried in the browser with the restarted API: BR-2 (due 2020-01-01) → "Due date must be on or after 2026-11-11." under Due date; valid task → new row in date order, form empty; BR-1 on GR-100003 → "Grant GR-100003 is closed, so no task can be added." at the top of the form
+- One screen, built test-first task by task (T5.1–T5.5): typed API client, grant drop-down, task table (overdue, completed on, completed late), Complete, Add task form (client checks, API errors)
+- Decisions D50–D54 (tan); added while building: opens on the first grant and "No tasks yet." (D50), errors outside the form at the top of the screen (D51), priority starts at Medium (D53)
+- Real responses checked with `curl` before writing the client; `user.type` on a date input checked with a throwaway test before relying on it
+- `./test.sh` checks frontend lines over 100 characters, counted in UTF-8 (bash grep counts bytes by default)
+- `CLAUDE.md`: frontend exception to "one type per file" (props interfaces, API types)
+- Tried in the browser against the real API: overdue highlight, Closed label, "No tasks yet.", Complete, BR-2 under Due date, BR-1 at the top of the form, a valid task added in date order
+- 18 frontend tests; 31 breaks on purpose, each turned a test red
 
 **Files touched:**
-- `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
-- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4) · `AddTaskForm.test.tsx` · `GrantTasksScreen.test.tsx` (T5.5) · `TaskList.tsx` · `api/grantsApi.ts` · `api/grantsApi.test.ts` (wrapped lines) · `AddTaskForm.tsx` · `GrantTasksScreen.tsx` · `index.css` (T5.5)
-- `test.sh` (frontend line length)
-- `docs/plan.md` (D50: opens on the first grant; D53: priority) · `CLAUDE.md` (frontend exception to "one type per file") · `docs/ai-log.md`
-- `docs/plan.md` (Step 5 task table, D50–D54) · `docs/work-log/step-5-frontend.md`
+- `frontend/src/`: `GrantTasksScreen.tsx` · `TaskList.tsx` · `AddTaskForm.tsx` (each with `.test.tsx`) · `App.tsx` · `index.css`
+- `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts`
+- root: `test.sh` · `CLAUDE.md`
+- `docs/`: `plan.md` (Step 5 tasks, D50–D54) · `ai-log.md` (3 entries) · `work-log/step-5-frontend.md`
 
 ### Review
 | # | Task | Result |
 |---|------|--------|
-| 5 | T5.5 | 🔧 10 comment lines over 100 characters (Prettier does not wrap comments): all wrapped; `./test.sh` now checks it |
-| 4 | T5.4 | 🔧 see last item · ✅ title rule in one function (`titleErrorFor`) · two `if`s, not a `switch`: TypeScript has no `case > 100` like C#, and `switch (true)` would be a trick · 🔧 props interfaces (`TaskListProps`, `AddTaskFormProps`) sat in their component's file against "one type per file": tan agreed, exception added to `CLAUDE.md`, AI log entry |
-| 3 | T5.3 | ✅ no short-circuit tricks (`if` blocks) · `screenError` named for what it holds now |
-| 2 | T5.2 | 🔧 `isLatest && setGrant(...)` rewritten as a plain `if` ("no clever tricks") · ✅ no new package, no state library |
-| 1 | T5.1 | ✅ diff re-read against D35, D49, D51, D54: no extra calls (close and overdue not used by this screen) |
+| 1 | Log | 🔧 "Test it yourself" and "Review it yourself" left empty at T5.1 red: filled, AI log entry |
+| 2 | T5.2 | 🔧 `isLatest && setGrant(...)` rewritten as a plain `if` ("no clever tricks") |
+| 3 | T5.4 | 🔧 props interfaces sat in their component's file against "one type per file": tan agreed, `CLAUDE.md` exception |
+| 4 | T5.5 | 🔧 10 comment lines over 100 characters (Prettier does not wrap comments): wrapped, now checked by `./test.sh` |
+| 5 | T5.1 | ✅ diff against D35, D49, D51, D54: only the four calls this screen needs |
+| 6 | T5.3–T5.5 | ✅ one `switch` on the API's `field` · title rule in one function (two `if`s: TypeScript has no `case > 100`) · no new package |
 
-**Missing:** T5.6 (final log)
+**Missing:** no test for: the `isLatest` guard (switching grants faster than the API answers) · the form emptied on a grant change (`key`) · an old screen error cleared by the next Complete · messages for errors that are not ProblemDetails (load, complete, add; step 6 adds "server unreachable")
 
 **Review it yourself:**
 1. `docs/plan.md` D50–D54: do they say what you chose?
-2. `frontend/src/api/grantsApi.ts`: do the types match the `curl` output (`GET /grants/1`)?
-3. `grantsApi.test.ts`: each test's "Catches" line names a different bug.
-4. `GrantTasksScreen.tsx`: the `isLatest` flag in the second `useEffect`: can you explain why it is there?
+2. `grantsApi.ts`: why `toApiError` reads `Content-Type` before the body.
+3. `GrantTasksScreen.tsx`: why the `isLatest` flag, and why `key={grant.id}` on the form.
+4. Each test's "Catches" line names a different bug.
 
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
-| 5 | T5.5 | ✅ 3 failed (FE-9, FE-10: message never shown, unhandled rejection · FE-11: form not on the screen) | ✅ 18 passed · `./test.sh` exit 0 | ✅ 6 breaks, each red: dueDate error not under its input → FE-9 · error without field swallowed → FE-10 · errors not caught → FE-9, FE-10 · `onAdded` not called → FE-11 · title not cleared → FE-11 · grant not reloaded → FE-11 |
-| 4 | T5.4 | ✅ 5 failed (no form: no Title or Due date label) | ✅ 15 passed · frontend checks green; `./test.sh` red only on step 6's 2 `HealthCheckTests` | ✅ 7 breaks, each red: not trimmed before check → FE-6, FE-7b · `>=` → FE-7b · length check removed → FE-7a · empty check removed → FE-6 · due date check removed → FE-8 · error not linked to input → FE-6, FE-7a · untrimmed title sent → FE-7b |
-| 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) · FE-13: 1 failed (no alert, unhandled rejection) | ✅ 10 passed · frontend checks green; `./test.sh` red only on step 6's red backend tests (`HealthCheckTests`, `AddTaskRetryTests`) | ✅ 5 breaks, each red: button calls nothing → FE-5, FE-13 · wrong id sent → FE-13 · screen uses its own today → FE-5 · row not replaced → FE-5 · API message ignored → FE-13 |
-| 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
-| 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed · `./test.sh` exit 0 | ✅ 5 breaks, each red: no `/api` prefix → API-1 · POST→PUT → API-1 · `detail` ignored → API-2 · `field` dropped → API-2 · always parse JSON → API-3 |
+| 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed | ✅ 5 red: no `/api` prefix · POST→PUT · `detail` ignored · `field` dropped · always parse JSON |
+| 2 | T5.2 | ✅ 4 failed (stubs render nothing) · FE-12: 1 failed | ✅ 8 passed | ✅ 8 red: every row overdue · no Overdue label · completed shown as pending · late label everywhere · drop-down ignored · opens empty · status hidden · empty check removed |
+| 3 | T5.3 | ✅ FE-5 failed (button does nothing) · FE-13 failed (error swallowed) | ✅ 10 passed | ✅ 5 red: button calls nothing · wrong id · own "today" · row not replaced · API message ignored |
+| 4 | T5.4 | ✅ 5 failed (no form) | ✅ 15 passed | ✅ 7 red: not trimmed · `>=` · each check removed · error not linked to its input · untrimmed title sent |
+| 5 | T5.5 | ✅ 3 failed (no API message · form not on the screen) | ✅ 18 passed · `./test.sh` exit 0 | ✅ 6 red: dueDate error misplaced · field-less error swallowed · errors not caught · `onAdded` not called · title not cleared · grant not reloaded |
 
-**Test cases** (16; each catches a different bug)
+**Test cases · API client and task table** (each catches a different bug)
 | # | Scenario → expected | Catches |
 |---|---------------------|---------|
 | API-1 | `addTask` → POST `/api/grants/1/tasks` with the JSON body | Wrong URL, method or body |
-| API-2 | 400 ProblemDetails with `code` and `field` → `ApiError` with `code`, `field`, message = `detail` | Error body ignored |
-| API-3 | 400 with an empty body → `ApiError` "Check the form and try again." | Crash on an empty body |
-| FE-1 | Choose a grant in the drop-down → its tasks show | Tasks not reloaded on change |
-| FE-2 | `isOverdue` task → "Overdue" label; other tasks → none | Highlight missing, or on every task |
-| FE-3 | Pending → Complete button; completed → no button, "Completed on {date}" | Complete offered on a completed task |
-| FE-4 | `completedLate` → "Completed late" label | Label missing, or on the wrong task |
-| FE-5 | Click Complete → PUT; row shows the date from the response | Screen uses its own "today" |
-| FE-6 | Title empty or spaces → error, no request | Check missing, or not trimmed |
-| FE-7 | Title 101 characters → error (7a); 100 with spaces around → sent trimmed (7b) | Length check missing · `>=` instead of `>` · counted before trimming |
-| FE-8 | No due date → error, no request | Date check missing |
-| FE-9 | API 400 with `field: dueDate` → error under Due date | Field errors lost or shown in the wrong place |
-| FE-10 | API 409 `grant-closed` → error in the box at the top of the form | Errors without a field swallowed |
-| FE-11 | Task added → it is in the table, form cleared | Table not refreshed |
-| FE-13 | Complete fails (404 `task-not-found`) → the API's message at the top of the screen (added with D51) | A failed Complete swallowed |
-| FE-12 | No tasks → "No tasks yet.", no table (added at tan's request) | A bare table header that looks like a loading error |
+| API-2 | 400 ProblemDetails → `ApiError` with `code`, `field`, message = `detail` | Error body ignored |
+| API-3 | 400 with an empty body → "Check the form and try again." | Crash on an empty body |
+| FE-1 | Opens on the first grant; choose another → its tasks and status | Tasks not reloaded · screen opens empty |
+| FE-2 | `isOverdue` → highlighted row + "Overdue"; other tasks → neither | Highlight missing, or on every task |
+| FE-3 | Pending → Complete button; completed → "Completed on {date}", no button | Complete offered on a completed task |
+| FE-4 | `completedLate` → "Completed late"; on time → no label | Label missing, or on every completed task |
+| FE-12 | No tasks → "No tasks yet.", no table (tan asked) | A bare header that looks like a loading error |
 
-**Missing:** T5.6 · no test for: the form emptied when the grant changes (`key`) · a non-API error when adding (step 6 adds the unreachable message) · clearing an old error when Complete is clicked again ·  the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
+**Test cases · Complete and Add task**
+| # | Scenario → expected | Catches |
+|---|---------------------|---------|
+| FE-5 | Complete → PUT; row shows the date from the response | Screen uses its own "today" |
+| FE-13 | Complete fails (404) → API message at the top of the screen | A failed Complete swallowed |
+| FE-6 | Title empty or spaces → error under Title, nothing sent | Check missing · not trimmed |
+| FE-7 | 101 characters → error (7a); 100 with spaces around → sent trimmed (7b) | Check missing · `>=` · counted before trimming |
+| FE-8 | No due date → error under Due date, nothing sent | Date check missing |
+| FE-9 | API 400 on `dueDate` (BR-2) → message under Due date | Field errors lost or misplaced |
+| FE-10 | API 409 `grant-closed` (BR-1) → message at the top of the form | Field-less errors swallowed |
+| FE-11 | Valid task → new row in the table, form empty | Table not refreshed · form keeps its values |
+
+**Missing:** none beyond the list under Review
 
 **Test it yourself:**
 
 | Group | Run | Expect | Break on purpose → expect (then undo) |
 |-------|-----|--------|----------------------------------------|
-| API client (T5.1) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 3 passed | In `grantsApi.ts` change `method: 'POST'` to `'PUT'` → API-1 fails |
-| Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | 4 passed | In `TaskList.tsx` change `className={task.isOverdue ? 'overdue' : undefined}` to `className="overdue"` → FE-2 fails |
-| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late"; add a task due 2020-01-01 → BR-2 error under Due date; GR-100003 + any task → BR-1 error at the top of the form | — |
-| Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 3 passed | In `TaskList.tsx` change `onComplete(task.id)` to `onComplete(task.grantId)` → FE-13 fails |
-| Form checks (T5.4) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | 5 passed | In `AddTaskForm.tsx` change `trimmedTitle.length > titleMaxLength` to `>=` → FE-7b fails |
-| API errors and adding (T5.5) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx src/GrantTasksScreen.test.tsx)` | 9 passed | In `AddTaskForm.tsx` change `case 'dueDate':` to `case 'due-date':` → FE-9 fails |
-| Line length | `./test.sh` | Section "Frontend line length (max 100)" prints nothing | Add a 101-character comment line in `TaskList.tsx` → `./test.sh` prints it and stops |
-| Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
-| Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |
+| Everything | `./test.sh` | exit 0; frontend 18 passed | — |
+| API client | `(cd frontend && npx vitest run src/api)` | 3 passed | `grantsApi.ts`: `method: 'POST'` → `'PUT'` → API-1 fails |
+| Task table | `(cd frontend && npx vitest run src/TaskList.test.tsx)` | 4 passed | `TaskList.tsx`: `className={task.isOverdue ? 'overdue' : undefined}` → `className="overdue"` → FE-2 fails |
+| Screen | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 4 passed | `TaskList.tsx`: `onComplete(task.id)` → `onComplete(task.grantId)` → FE-13 fails |
+| Form | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | 7 passed | `AddTaskForm.tsx`: `case 'dueDate':` → `case 'due-date':` → FE-9 fails |
+| Line length | `./test.sh` | "Frontend line length" prints nothing | Add a 101-character comment line → `./test.sh` prints it and stops |
+| Types | `(cd frontend && npx tsc -b)` | No output | `Task.dueDate: string` → `number` → type error in a test |
+| In the browser | API running, `(cd frontend && npm run dev)`, http://localhost:5173 | GR-100001 opens, "Verify bank details" pink + "Overdue" · Complete → "Completed on …" + "Completed late" · due 2020-01-01 → BR-2 under Due date · GR-100003 → "Closed", add → BR-1 at the top of the form · GR-100004 → "No tasks yet." | — |
