@@ -40,6 +40,7 @@ export default function GrantTasksScreen() {
       .then((detail) => {
         if (isLatest) {
           setGrant(detail)
+          setScreenError(null) // the grant loaded, so an older error no longer applies
         }
       })
       .catch(() => {
@@ -52,10 +53,19 @@ export default function GrantTasksScreen() {
     }
   }, [selectedGrantId])
 
+  /** Hides the shown grant at once, so its tasks and form never sit under another grant's name. */
+  function handleGrantChange(grantId: number) {
+    setGrant(null)
+    setSelectedGrantId(grantId)
+  }
+
   /** Loads the grant again, so a new task shows in the server's order with its flags. */
   function reloadGrant(grantId: number) {
     getGrant(grantId)
-      .then(setGrant)
+      .then((detail) => {
+        setGrant(detail)
+        setScreenError(null)
+      })
       .catch(() => setScreenError(loadErrorMessage))
   }
 
@@ -90,7 +100,7 @@ export default function GrantTasksScreen() {
       <select
         id="grant"
         value={selectedGrantId ?? ''}
-        onChange={(event) => setSelectedGrantId(Number(event.target.value))}
+        onChange={(event) => handleGrantChange(Number(event.target.value))}
       >
         {grants.map((item) => (
           <option key={item.id} value={item.id}>

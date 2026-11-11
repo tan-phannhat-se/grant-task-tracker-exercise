@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GrantDetail, GrantListItem, Task } from './api/grantsApi'
@@ -162,5 +162,81 @@ describe('GrantTasksScreen', () => {
     expect(await screen.findByRole('row', { name: /Review budget/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Title')).toHaveValue('')
     expect(screen.getByLabelText('Due date')).toHaveValue('')
+  })
+
+  /**
+   * FE-14: loading GR-100003 fails (server down) → error at the top;
+   * then GR-100001 loads → error gone.
+   * Catches: an old error left on screen after the server is back, so the officer
+   * thinks the new grant failed too.
+   */
+  it('LoadFailsThenAnotherGrantLoads_ErrorIsCleared', async () => {
+    const failOnce = new Set(['/api/grants/3'])
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) =>
+        failOnce.delete(url)
+          ? Promise.resolve(new Response(null, { status: 503 }))
+          : fakeApi(url, init),
+      ),
+    )
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    await screen.findByText('Verify bank details')
+
+    await user.selectOptions(screen.getByLabelText('Grant'), 'GR-100003 · Harbour Arts Collective')
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    await user.selectOptions(
+      screen.getByLabelText('Grant'),
+      'GR-100001 · Riverside Community Garden Inc.',
+    )
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  /**
+   * FE-15: an error is shown (Complete failed), then a task is added
+   * and the grant reloads → error gone.
+   * Catches: the reload after adding a task leaving an old error on screen.
+   */
+  it('ErrorShownThenGrantReloads_ErrorIsCleared', async () => {
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    const row = await screen.findByRole('row', { name: /Request quote/ })
+    await user.click(within(row).getByRole('button', { name: 'Complete' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Title'), 'Review budget')
+    await user.type(screen.getByLabelText('Due date'), '2026-11-25')
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+
+    await screen.findByRole('row', { name: /Review budget/ })
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  /**
+   * FE-16: GR-100001 is shown, then GR-100003 fails to load → GR-100001's tasks and form are gone.
+   * Catches: the previous grant left on screen under the new grant's name, so Add task
+   * would add to the wrong grant.
+   */
+  it('NewGrantFailsToLoad_PreviousGrantIsNoLongerShown', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) =>
+        url === '/api/grants/3'
+          ? Promise.resolve(new Response(null, { status: 503 }))
+          : fakeApi(url, init),
+      ),
+    )
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    await screen.findByText('Verify bank details')
+
+    await user.selectOptions(screen.getByLabelText('Grant'), 'GR-100003 · Harbour Arts Collective')
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByText('Verify bank details')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument()
   })
 })
