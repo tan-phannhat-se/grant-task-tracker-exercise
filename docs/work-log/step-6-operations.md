@@ -3,29 +3,40 @@
 - Plan approved by tan: D57–D62 (key header, retry order, "same request", simultaneous retries, server unreachable, one key per form); tasks T6.1–T6.5 in `plan.md`
 - T6.1 red: RT-1..RT-7 (8 runs); 6 fail for the right reason (201 instead of 200/400/422, 409 instead of 200); RT-2 and RT-6 already pass (today's code already does it), to be proved by breaking the code at green
 - T6.2 red: HC-1, HC-2 fail with 404 (no `/health` route yet); tan writes the check
+- T6.1 green: `Idempotency-Key` header checked at the endpoint (UUID only); `GrantService.AddTaskAsync` looks the key up first and returns `AddTaskResult` (task + `IsRetry`); `GrantTask.MatchesRequest`; new kind `RequestMismatch` → 422; two error codes
+- T6.1 hand check on port 5099 with its own database file: 201 → 200 same id → 422 → 400 → 201 (no key); one task saved; only its own processes stopped
+- T6.2 green: tan wrote `DatabaseHealthCheck` (reads `Grants`; any exception → Unhealthy) and `/health` in `Program.cs`, in every environment; the AI reviewed it line by line, step by step
 
 **Files touched:**
+- `backend/src/GrantTracker.Api/`: `Domain/DomainErrorKind.cs` · `Domain/ErrorCodes.cs` · `Domain/GrantTask.cs` · `Services/AddTaskResult.cs` (new) · `Services/GrantService.cs` · `Endpoints/GrantEndpoints.cs` · `Endpoints/DomainRuleExceptionHandler.cs` (T6.1 green)
 - `backend/tests/GrantTracker.Tests/Api/`: `AddTaskRetryTests.cs` (T6.1) · `HealthCheckTests.cs` (T6.2)
+- `backend/src/GrantTracker.Api/`: `Data/DatabaseHealthCheck.cs` (new) · `Program.cs` (T6.2 green, written by tan)
+- `docs/ai-log.md` (zsh hand-check entry; wrong commit advice entry)
 - `docs/plan.md` (Step 6 task table, D57–D62) · `docs/work-log/step-6-operations.md`
 
 ### Review
 | # | Task | Result |
 |---|------|--------|
-| 1 | T6.1 red | ✅ each case maps to D57–D60 or a step 6 test note; no `field` expected (a header is not a form input) |
-| 2 | T6.2 red | ✅ tests check only the status code, so tan is free to choose the body and the files |
+| 1 | T6.1 hand check | 🔧 first run in zsh gave 400 for every call (argument not split); rerun in `bash`: all as expected (ai-log) |
+| 2 | T6.1 red | ✅ each case maps to D57–D60 or a step 6 test note; no `field` expected (a header is not a form input) |
+| 3 | T6.1 green | ✅ diff re-read against D57–D59: key looked up before the grant (D58); the 422 message never describes the other task; no new package; one type per file |
+| 4 | T6.2 red | ✅ tests check only the status code, so tan is free to choose the body and the files |
+| 5 | T6.2 green (tan's code) | 🔧 AI review: `<param>` blocks, a line over 120, `ex.Message` as the description (now a fixed text + the exception), empty `//` comments in `Program.cs` · ✅ no new package (health checks ship with ASP.NET Core 8) |
 
-**Missing:** T6.1 green · T6.2 green (tan) · T6.3–T6.5
+**Missing:** T6.3–T6.5
 
 **Review it yourself:**
 1. `docs/plan.md` D57–D62: do they say what you approved?
-2. `AddTaskRetryTests.cs`: each "Catches" line names a different bug.
-3. `HealthCheckTests.cs` HC-2: dropping the tables is how the test makes the data unreachable; your check must notice it.
+2. `Services/GrantService.cs` `AddTaskAsync`: why is the key looked up before the grant is loaded?
+3. `Domain/GrantTask.cs` `MatchesRequest`: why is the title trimmed there?
+4. `AddTaskRetryTests.cs`: each "Catches" line names a different bug.
+5. `Data/DatabaseHealthCheck.cs`: why read a row instead of `CanConnectAsync`? (break H2 below answers it)
 
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
-| 1 | T6.1 | ✅ 6 of 8 failed (wrong status); RT-2, RT-6 pass | ⏳ | ⏳ |
-| 2 | T6.2 | ✅ 2 failed (404) | ⏳ tan | ⏳ |
+| 1 | T6.1 | ✅ 6 of 8 failed (wrong status); RT-2, RT-6 pass | ✅ 8 passed; `./test.sh` stops only at HC-1, HC-2 (T6.2 red, tan's) | ✅ 8 breaks in a `bash` script, restore checked by hash: untrimmed title → RT-1 · grant not compared → RT-4 · title not compared → RT-5 · retry as 201 → RT-1, RT-7 · BR-1 before key → RT-7 · key mandatory → RT-2 (+7 AT) · length-only check → RT-3 · BR-1 skipped with a key → RT-6 |
+| 2 | T6.2 | ✅ 2 failed (404) | ✅ 2 passed; `./test.sh` exit 0 (94 backend, 15 frontend) | ✅ 2 breaks, restore checked by hash: data never read → HC-2 · only `CanConnectAsync` → HC-2 (opening still works with the tables gone) |
 
 **Test cases** (T6.1, T6.2; each catches a different bug)
 | # | Scenario → expected | Catches |
@@ -46,5 +57,7 @@
 
 | Group | Run | Expect | Break on purpose → expect (then undo) |
 |-------|-----|--------|----------------------------------------|
-| Retries (T6.1) | `dotnet test backend --filter "FullyQualifiedName~AddTaskRetryTests"` | Now (red): 6 failed, 2 passed · after green: 8 passed | ⏳ written at green |
-| Health (T6.2) | `dotnet test backend --filter "FullyQualifiedName~HealthCheckTests"` | Now (red): 2 failed · after tan's check: 2 passed | ⏳ written at green |
+| Retries (T6.1) | `dotnet test backend --filter "FullyQualifiedName~AddTaskRetryTests"` | 8 passed | In `GrantTask.MatchesRequest` remove `GrantId == grantId &&` → RT-4 fails |
+| Retries by hand | API running, then the same `curl -X POST …/grants/2/tasks -H "Idempotency-Key: <uuid>"` twice | 201, then 200 with the same `id` | Change the title in the second call → 422 `idempotency-key-reused` |
+| Health (T6.2) | `dotnet test backend --filter "FullyQualifiedName~HealthCheckTests"` | 2 passed | In `DatabaseHealthCheck` replace the `AnyAsync` line with `await _db.Database.CanConnectAsync(cancellationToken);` → HC-2 fails |
+| Health by hand | API running, then `curl -i http://localhost:5080/health` | `200` · `Healthy` (also checked in Production on port 5099) | — |

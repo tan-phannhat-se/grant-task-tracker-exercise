@@ -14,6 +14,8 @@ builder.Services.AddDbContext<GrantTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("GrantTracker")));
 builder.Services.AddScoped<GrantService>();
 builder.Services.AddScoped<GrantTaskService>();
+// One health check: can this copy of the API read its data?
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 
 // Enums go out by name ("Open"), so clients do not depend on the stored numbers.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -68,6 +70,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();  // http://localhost:5080/swagger
 }
 
+// In every environment: the load balancer calls it to stop sending officers to a copy that is down.
+app.MapHealthChecks("/health");
 app.MapGrantEndpoints();
 app.MapTaskEndpoints();
 
