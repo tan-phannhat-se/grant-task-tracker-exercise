@@ -10,18 +10,22 @@
 - Checked by hand before T6.3: with the API down, the Vite dev proxy answers 500 with an empty body; tan chose to make it answer 502 (D61), and `@types/node` was added for its types (D63, tan's choice)
 - T6.3 red: NET-1..3, KEY-1 (6 runs fail: no key header, raw `TypeError`, "Something went wrong" for 502–504, no signal)
 - T6.3 green: `send` adds a 15 s time limit and turns no answer or a 502/503/504 into `server-unreachable`; `addTask` takes the key; dev proxy answers 502 (checked by hand: 502); the form sends a new key per click for now (T6.4 keeps it across retries); FE-5 now checks only the method, as every request also carries a `signal`
+- T6.4 (form) red: NET-4, KEY-2, KEY-3; KEY-2 fails (a new key per click); NET-4 and KEY-3 already pass, proved by breaking the code
+- T6.4 (form) green: `AddTaskForm` keeps one key in state, makes a new one on any edit, sends it on every click; the screen part (NET-5) waits for step 5's `screenError` fix in the same files
 
 **Files touched:**
 - `backend/src/GrantTracker.Api/`: `Domain/DomainErrorKind.cs` · `Domain/ErrorCodes.cs` · `Domain/GrantTask.cs` · `Services/AddTaskResult.cs` (new) · `Services/GrantService.cs` · `Endpoints/GrantEndpoints.cs` · `Endpoints/DomainRuleExceptionHandler.cs` (T6.1 green)
 - `backend/tests/GrantTracker.Tests/Api/`: `AddTaskRetryTests.cs` (T6.1) · `HealthCheckTests.cs` (T6.2)
 - `backend/src/GrantTracker.Api/`: `Data/DatabaseHealthCheck.cs` (new) · `Program.cs` (T6.2 green, written by tan)
-- `docs/ai-log.md` (zsh hand-check entry; wrong commit advice entry)
+- `docs/ai-log.md` (zsh hand-check entry; wrong commit advice entry; dead key reset entry)
 - `frontend/`: `src/api/grantsApi.ts` + test · `vite.config.ts` · `package.json` + lock (`@types/node`) · `src/AddTaskForm.tsx` · `src/GrantTasksScreen.test.tsx` (FE-5) (T6.3)
-- `docs/plan.md` (Step 6 task table, D57–D63; T6.3, T6.4 rows widened) · `docs/work-log/step-6-operations.md`
+- `frontend/src/`: `AddTaskForm.tsx` + test (T6.4 form)
+- `docs/plan.md` (Step 6 task table, D57–D63; T6.3, T6.4 rows widened; D62 wording) · `docs/work-log/step-6-operations.md`
 
 ### Review
 | # | Task | Result |
 |---|------|--------|
+| 0c | T6.4 (form) green | 🔧 a new key after a success could not be caught by any break (the form is empty, so the next task is an edit anyway): line removed, D62 worded to match (ai-log) |
 | 0 | T6.3 plan | 🔧 D61 assumed a proxy answers 502–504 when the API is down; running it showed Vite answers 500 → dev proxy now answers 502 (tan chose) |
 | 0b | T6.3 green | ✅ diff re-read against D61: no automatic retry; message and code in one place (`serverUnreachable`); the form keeps its values on failure (unchanged). Note: `crypto.randomUUID` needs a secure page (localhost or https) |
 | 1 | T6.1 hand check | 🔧 first run in zsh gave 400 for every call (argument not split); rerun in `bash`: all as expected (ai-log) |
@@ -30,7 +34,7 @@
 | 4 | T6.2 red | ✅ tests check only the status code, so tan is free to choose the body and the files |
 | 5 | T6.2 green (tan's code) | 🔧 AI review: `<param>` blocks, a line over 120, `ex.Message` as the description (now a fixed text + the exception), empty `//` comments in `Program.cs` · ✅ no new package (health checks ship with ASP.NET Core 8) |
 
-**Missing:** T6.4 · T6.5 screen hand check
+**Missing:** T6.4 screen part (NET-5, after step 5's fix) · T6.5 screen hand check
 
 **Review it yourself:**
 1. `docs/plan.md` D57–D62: do they say what you approved?
@@ -43,6 +47,7 @@
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
 | 1 | T6.1 | ✅ 6 of 8 failed (wrong status); RT-2, RT-6 pass | ✅ 8 passed; `./test.sh` stops only at HC-1, HC-2 (T6.2 red, tan's) | ✅ 8 breaks in a `bash` script, restore checked by hash: untrimmed title → RT-1 · grant not compared → RT-4 · title not compared → RT-5 · retry as 201 → RT-1, RT-7 · BR-1 before key → RT-7 · key mandatory → RT-2 (+7 AT) · length-only check → RT-3 · BR-1 skipped with a key → RT-6 |
+| 4 | T6.4 (form) | ✅ KEY-2 failed (new key per click); NET-4, KEY-3 passed | ✅ 10 passed; `tsc` ok | ✅ 4 breaks, restore checked by hash: new key per click → KEY-2 · key kept after an edit → KEY-3 · form cleared on failure → NET-4 · error without a field dropped → NET-4, FE-10 |
 | 3 | T6.3 | ✅ 6 failed (see Done) | ✅ 9 passed; `./test.sh` exit 0 (94 backend, 24 frontend) | ✅ 4 breaks, restore checked by hash: no key header → KEY-1 · fetch error passed on → NET-1 · 502 left out → NET-2 (502) · no time limit → NET-3 |
 | 2 | T6.2 | ✅ 2 failed (404) | ✅ 2 passed; `./test.sh` exit 0 (94 backend, 15 frontend) | ✅ 2 breaks, restore checked by hash: data never read → HC-2 · only `CanConnectAsync` → HC-2 (opening still works with the tables gone) |
 
@@ -62,8 +67,11 @@
 | NET-1 | `fetch` fails → `ApiError` `server-unreachable`, status 0 | "Failed to fetch" shown, or swallowed |
 | NET-2 | 502 / 503 / 504, empty body → same error | Proxy failure shown as "Something went wrong" |
 | NET-3 | Every request carries an abort signal | No time limit: the screen waits forever |
+| NET-4 | Form: server unreachable → message at the top of the form, values kept | Failure swallowed · form cleared |
+| KEY-2 | Form: fail, click again → same key (a UUID); next task → new key | Retry adds a twin · one key forever |
+| KEY-3 | Form: fail, edit the title, click again → new key | Corrected task refused as a reused key |
 
-**Missing:** T6.4 cases (NET-4 form message, NET-5 load message, KEY-2 same key on retry / new after success, KEY-3 new key after an edit) are written at their red commit; FE-12, FE-13 were already used by step 5
+**Missing:** NET-5 (screen: load fails → "Cannot reach the server…") after step 5's fix; FE-12, FE-13 were already used by step 5
 
 **Test it yourself:**
 
@@ -72,6 +80,7 @@
 | Retries (T6.1) | `dotnet test backend --filter "FullyQualifiedName~AddTaskRetryTests"` | 8 passed | In `GrantTask.MatchesRequest` remove `GrantId == grantId &&` → RT-4 fails |
 | Retries by hand | API running, then the same `curl -X POST …/grants/2/tasks -H "Idempotency-Key: <uuid>"` twice | 201, then 200 with the same `id` | Change the title in the second call → 422 `idempotency-key-reused` |
 | API client (T6.3) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 9 passed | In `grantsApi.ts` remove `502` from the list → NET-2 (502) fails |
+| Form keys (T6.4) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | 10 passed | In `AddTaskForm.tsx` send `crypto.randomUUID()` instead of `idempotencyKey` → KEY-2 fails |
 | Dev proxy, API down | Stop the API, keep `npm run dev`, then `curl -i http://localhost:5173/api/grants` | `502 Bad Gateway` | Remove `configure` in `vite.config.ts` → `500` |
 | Health (T6.2) | `dotnet test backend --filter "FullyQualifiedName~HealthCheckTests"` | 2 passed | In `DatabaseHealthCheck` replace the `AnyAsync` line with `await _db.Database.CanConnectAsync(cancellationToken);` → HC-2 fails |
 | Health by hand | API running, then `curl -i http://localhost:5080/health` | `200` · `Healthy` (also checked in Production on port 5099) | — |

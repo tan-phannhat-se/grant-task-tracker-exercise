@@ -19,6 +19,17 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
   const [dueDateError, setDueDateError] = useState<string | null>(null)
   // An error that belongs to no input, e.g. the grant is closed
   const [formError, setFormError] = useState<string | null>(null)
+  // One key per filled-in form: clicking Add again after a failure sends the same key,
+  // so a request that did reach the server never adds the task twice.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
+
+  /**
+   * A new key once the form holds a different task: after any edit.
+   * After a success the form is empty, so the next task is always an edit too.
+   */
+  function startNewRequest() {
+    setIdempotencyKey(crypto.randomUUID())
+  }
 
   /** Checks the input first; only input that passes is sent. */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -33,7 +44,7 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
       return
     }
 
-    addTask(grantId, { title: trimmedTitle, dueDate, priority }, crypto.randomUUID())
+    addTask(grantId, { title: trimmedTitle, dueDate, priority }, idempotencyKey)
       .then(() => {
         setTitle('')
         setDueDate('')
@@ -73,7 +84,10 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
       <input
         id="task-title"
         value={title}
-        onChange={(event) => setTitle(event.target.value)}
+        onChange={(event) => {
+          setTitle(event.target.value)
+          startNewRequest()
+        }}
         aria-invalid={titleError !== null}
         aria-describedby={titleError ? 'task-title-error' : undefined}
       />
@@ -88,7 +102,10 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
         id="task-due-date"
         type="date"
         value={dueDate}
-        onChange={(event) => setDueDate(event.target.value)}
+        onChange={(event) => {
+          setDueDate(event.target.value)
+          startNewRequest()
+        }}
         aria-invalid={dueDateError !== null}
         aria-describedby={dueDateError ? 'task-due-date-error' : undefined}
       />
@@ -102,7 +119,10 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
       <select
         id="task-priority"
         value={priority}
-        onChange={(event) => setPriority(event.target.value as Priority)}
+        onChange={(event) => {
+          setPriority(event.target.value as Priority)
+          startNewRequest()
+        }}
       >
         <option>Low</option>
         <option>Medium</option>
