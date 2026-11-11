@@ -162,7 +162,7 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 - Step 6 (OP-3): accept only a 36-character UUID as the key (D36); a missing key is allowed (D7) and just means no duplicate protection.
 - Step 7 (README, security / before going live): the idempotency key is for safe retries, not security; add authentication and scope keys per user before going live.
 - Step 5 (screen): a task completed late shows a "Completed late" label (D26).
-- Step 7 (README, known issues): a badly formatted value in "add task" gets a 400 without `code` or `field` (D49).
+- Step 7 (README, known issues): a badly formatted value in "add task" gets a 400 with an empty body (D49); the screen shows a general "check the form" message.
 - Step 7 (README, known issues): on .NET 8 the exception middleware logs every handled 400/409 as an "unhandled exception" Error, so logs are noisy for support (OP-4). Accepted (tan: a fix would be over-engineering); .NET 10 can turn this off.
 
 ## Decisions
@@ -215,5 +215,5 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D45 | `Endpoints/` keeps the endpoint classes (one partial class per route group: handlers, `.Routes`, filters) and the error handler; request types go in `Endpoints/Requests/`, response types in `Endpoints/Responses/` | About 13 files expected by the end of step 4. Grouping by kind keeps a shared type such as a task response in one place; grouping by feature would not. |
 | D46 | A missing grant or task is reported by throwing `DomainRuleException` with a new kind `NotFound` (→ 404, e.g. `grant-not-found`), raised by the service that loads it | Same reason as D44: one handler builds every error body. |
 | D47 | Tasks in a grant are ordered by due date, then id | The most urgent work is at the top of the screen, in a stable order. |
-| D48 | Missing fields in "add task": no `title` → treated as empty, so the domain reports `title-required` (D20 order kept: a closed grant still reports `grant-closed` first) · no `priority` → 400 `priority-invalid` · no `dueDate` → 400 `due-date-required` | Each missing field gets a clear code on its own field; title goes through the domain so the check order stays one rule. |
-| D49 | A badly formatted value (e.g. `dueDate: "2020-13-45"`, `priority: "Urgent"`, broken JSON) gets the framework's 400 ProblemDetails, without `code` or `field` | Little code; the screen uses a date picker and a drop-down, so this is rare. Noted in the README. |
+| D48 | Missing fields in "add task": no `title` → passed as empty, so the domain reports `title-required` · no `priority` → passed as 0, so the domain reports `priority-invalid` (D30) · no `dueDate` → 400 `due-date-required` at the endpoint (the domain has no stand-in for a date) | Each missing field gets a clear code on its own field. Title and priority go through the domain, so the check order stays one rule (D20: a closed grant reports `grant-closed` first). A separate priority check at the endpoint was removed: breaking it on purpose changed nothing. |
+| D49 | A badly formatted value (e.g. `dueDate: "2020-13-45"`, `priority: "Urgent"`, broken JSON) gets the framework's 400 with an empty body (checked by hand; no `code` or `field`) | Little code; the screen uses a date picker and a drop-down, so this is rare. Noted in the README. |
