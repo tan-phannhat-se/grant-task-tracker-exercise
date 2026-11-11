@@ -1,4 +1,5 @@
 using GrantTracker.Api.Data;
+using GrantTracker.Api.Endpoints;
 using GrantTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,10 @@ builder.Services.AddSingleton(services =>
         TimeZoneInfo.FindSystemTimeZoneById(timeZoneId));
 });
 
+// Errors as ProblemDetails: a broken business rule → 400 or 409 with its code; anything else → 500.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainRuleExceptionHandler>();
+
 var app = builder.Build();
 
 // Created now, so an unknown App:TimeZone stops the start-up instead of failing the first request.
@@ -42,6 +47,8 @@ using (var scope = app.Services.CreateScope())
         db.Database.EnsureCreated(); // keeps existing data across restarts
     }
 }
+
+app.UseExceptionHandler();
 
 // Swagger only in Development: it is a tool for developers and reviewers, not for officers.
 if (app.Environment.IsDevelopment())
