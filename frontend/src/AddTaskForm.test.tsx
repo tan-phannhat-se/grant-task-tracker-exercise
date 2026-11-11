@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from './api/grantsApi'
@@ -154,5 +154,80 @@ describe('AddTaskForm API errors', () => {
     expect(await within(form).findByRole('alert')).toHaveTextContent(
       'Grant GR-100003 is closed, so no task can be added.',
     )
+  })
+})
+
+const unreachableMessage = 'Cannot reach the server. Check your connection and try again.'
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** The Idempotency-Key header of the n-th request the form sent. */
+function keyOfCall(n: number): string {
+  const init = fetchMock.mock.calls[n][1] as RequestInit
+  return (init.headers as Record<string, string>)['Idempotency-Key']
+}
+
+describe('AddTaskForm safe retries', () => {
+  beforeEach(() => {
+    // A new answer for every request: a Response body can be read only once.
+    fetchMock.mockImplementation(() => Promise.resolve(Response.json(savedTask, { status: 201 })))
+  })
+
+  /**
+   * NET-4: the server cannot be reached → "Cannot reach the server…" at the top of the form,
+   * and the form keeps what the officer typed.
+   * Catches: the failure swallowed, or the form cleared so the officer must type it all again.
+   */
+  it('ServerUnreachable_ShowsMessageAtTopOfForm_KeepsTheValues', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={1} onAdded={() => {}} />)
+
+    await fillAndSubmit(user, 'Check documents', '2026-11-20')
+
+    const form = screen.getByRole('form', { name: 'Add task' })
+    expect(await within(form).findByRole('alert')).toHaveTextContent(unreachableMessage)
+    expect(screen.getByLabelText('Title')).toHaveValue('Check documents')
+  })
+
+  /**
+   * KEY-2: a failed add clicked again → the same key (a UUID); after a success,
+   * the next task gets a new key.
+   * Catches: a new key per click (a retry of a request that did reach the server adds the task
+   * twice), or one key forever (the next task is refused as a reused key).
+   */
+  it('RetryAfterFailure_SendsTheSameKey_NextTaskGetsANewKey', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    const onAdded = vi.fn()
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={1} onAdded={onAdded} />)
+
+    await fillAndSubmit(user, 'Check documents', '2026-11-20')
+    await screen.findByRole('alert')
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+    await waitFor(() => expect(onAdded).toHaveBeenCalledTimes(1))
+    await fillAndSubmit(user, 'Next task', '2026-11-21')
+    await waitFor(() => expect(onAdded).toHaveBeenCalledTimes(2))
+
+    expect(keyOfCall(0)).toMatch(uuidPattern)
+    expect(keyOfCall(1)).toBe(keyOfCall(0))
+    expect(keyOfCall(2)).not.toBe(keyOfCall(0))
+  })
+
+  /**
+   * KEY-3: a failed add, then the officer edits the title and clicks again → a new key.
+   * Catches: the key kept after an edit, so the API refuses the corrected task as a reused key.
+   */
+  it('EditAfterFailure_SendsANewKey', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={1} onAdded={() => {}} />)
+
+    await fillAndSubmit(user, 'Check documents', '2026-11-20')
+    await screen.findByRole('alert')
+    await user.type(screen.getByLabelText('Title'), ' again')
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+    expect(keyOfCall(1)).not.toBe(keyOfCall(0))
   })
 })
