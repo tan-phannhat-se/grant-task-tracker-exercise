@@ -158,6 +158,9 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 - Step 5 (screen): after Complete, show "Completed on {date}" from the response, so a repeat shows the original date.
 - Step 4 (API): task responses include `completedLate` (D26).
 - Step 4 (API): load a grant together with its tasks (`Include`) before `Close()`; otherwise BR-5 sees no tasks and lets the close through.
+- Step 6 (OP-3): a key that already exists for a different grant or a different request → 422 `idempotency-key-reused`, never the other task.
+- Step 6 (OP-3): accept only a 36-character UUID as the key (D36); a missing key is allowed (D7) and just means no duplicate protection.
+- Step 7 (README, security / before going live): the idempotency key is for safe retries, not security; add authentication and scope keys per user before going live.
 - Step 5 (screen): a task completed late shows a "Completed late" label (D26).
 
 ## Decisions
