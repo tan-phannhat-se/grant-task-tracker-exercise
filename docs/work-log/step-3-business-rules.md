@@ -8,6 +8,7 @@
 - T3.3 green: BR-2 in `Grant.AddTask` (earliest allowed date = later of today and the application date; the message names it as `yyyy-MM-dd`)
 - T3.4 red: 4 BR-4 tests
 - T3.4 green: BR-4 in `GrantTask.Complete` (records today; a repeat keeps the first date)
+- T3.5 red: 6 BR-5 tests (written by the AI; the code is tan's)
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
@@ -16,6 +17,7 @@
 - `backend/tests/GrantTracker.Tests/Domain/Br2DueDateTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
 - `backend/src/GrantTracker.Api/Domain/GrantTask.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br5CloseGrantTests.cs`
 
 ### Review
 | # | Check | Result |
@@ -38,6 +40,7 @@
 | 9 | T3.3 green, then broken three ways on purpose | ✅ 14/14 passed · `<=` → 2 red (both boundaries) · application date ignored → 2 red · codes swapped → 3 red · restored |
 | 10 | T3.4 red | ✅ 4/4 failed on `NotImplementedException` from `Complete`; the green step's break checks will prove the asserts |
 | 11 | T3.4 green, then broken twice on purpose | ✅ 18/18 passed · repeat guard removed → BR4-2 red · `CompletedDate = DueDate` → 4 red · restored |
+| 12 | T3.5 red: BR-5 tests | ✅ 2 of 6 failed (`Assert.Throws`): BR5-1, BR5-2. The other 4 pass as guards against blocking too much |
 
 **Test it yourself:**
 - [ ] `dotnet test backend` → 18 passed
