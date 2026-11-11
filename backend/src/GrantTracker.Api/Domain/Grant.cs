@@ -47,7 +47,26 @@ public class Grant
                 $"Grant {ReferenceNumber} is closed, so no task can be added.");
         }
 
-        var task = new GrantTask(title, dueDate, priority, createdAtUtc, idempotencyKey);
+        // BR-3: check and save the trimmed title, so what is checked is what is saved.
+        var trimmedTitle = title.Trim();
+        switch (trimmedTitle.Length)
+        {
+            case 0:
+                throw new DomainRuleException(
+                    ErrorCodes.TitleRequired,
+                    DomainErrorKind.Validation,
+                    "Title is required.",
+                    field: "title");
+
+            case > GrantTask.TitleMaxLength:
+                throw new DomainRuleException(
+                    ErrorCodes.TitleTooLong,
+                    DomainErrorKind.Validation,
+                    $"Title must be {GrantTask.TitleMaxLength} characters or fewer (it has {trimmedTitle.Length}).",
+                    field: "title");
+        }
+
+        var task = new GrantTask(trimmedTitle, dueDate, priority, createdAtUtc, idempotencyKey);
         _tasks.Add(task);
         return task;
     }
