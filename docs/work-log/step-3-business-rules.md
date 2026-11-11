@@ -5,6 +5,7 @@
 - T3.2 red: 5 BR-3 tests (6 runs)
 - T3.2 green: BR-3 in `Grant.AddTask` (trim, then one `switch` on the length; the trimmed title is saved)
 - T3.3 red: 5 BR-2 tests
+- T3.3 green: BR-2 in `Grant.AddTask` (earliest allowed date = later of today and the application date; the message names it as `yyyy-MM-dd`)
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
@@ -30,10 +31,11 @@
 | 6 | T3.2 red: BR-3 tests fail on their asserts | ✅ 5 of 6 runs failed; BR3-2 (exactly 100) passes because there is no limit yet, and guards `>` vs `>=` once there is |
 | 7 | T3.2 green, then `.Trim()` removed and `>` changed to `>=` on purpose | ✅ 9/9 passed · no trim → 3 red · `>=` → 2 red · restored (rerun after the `switch` rewrite) |
 | 8 | T3.3 red: BR-2 tests fail on their asserts | ✅ 3 of 5 failed (`Assert.Throws`); BR2-2 and BR2-4 (the two boundaries) pass because there is no date limit yet |
+| 9 | T3.3 green, then broken three ways on purpose | ✅ 14/14 passed · `<=` → 2 red (both boundaries) · application date ignored → 2 red · codes swapped → 3 red · restored |
 
 **Test it yourself:**
-- [ ] `dotnet test backend` → 9 passed
+- [ ] `dotnet test backend` → 14 passed
 - [ ] Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 2 tests fail → undo
 - [ ] `dotnet test backend --filter Br3` → 6 passed
 - [ ] Change `>` to `>=` in the BR-3 length check → BR3-2 fails → undo
-- [ ] `dotnet test backend --filter Br2` → 3 failed, 2 passed
+- [ ] `dotnet test backend --filter Br2` → 5 passed

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace GrantTracker.Api.Domain;
 
 /// <summary>
@@ -64,6 +66,20 @@ public class Grant
                     DomainErrorKind.Validation,
                     $"Title must be {GrantTask.TitleMaxLength} characters or fewer (it has {trimmedTitle.Length}).",
                     field: "title");
+        }
+
+        // BR-2: the earliest allowed due date is the later of today and the application date,
+        // and the error names that date so one fix is enough.
+        var earliestDueDate = today > ApplicationDate ? today : ApplicationDate;
+        if (dueDate < earliestDueDate)
+        {
+            var code = earliestDueDate == today ? ErrorCodes.DueDateInPast : ErrorCodes.DueDateBeforeApplication;
+            var earliest = earliestDueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            throw new DomainRuleException(
+                code,
+                DomainErrorKind.Validation,
+                $"Due date must be on or after {earliest}.",
+                field: "dueDate");
         }
 
         var task = new GrantTask(trimmedTitle, dueDate, priority, createdAtUtc, idempotencyKey);
