@@ -82,3 +82,25 @@ Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narr
 **Test it yourself:**
 - [ ] `./test.sh` passes
 - [ ] Put a `{` on the same line in any `.cs` file → `./test.sh` fails → undo
+
+---
+
+## Step 3 · Business rules · 2026-11-11 (in progress)
+**Done:** T3.1 red: 3 BR-1 tests.
+**Files touched:** `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`.
+
+### Review
+| # | Check | Result |
+|---|-------|--------|
+| 1 | One test per approved case (BR1-1 … BR1-3) | ✅ |
+| 2 | Fixed dates only, through `TestData` | ✅ |
+| 3 | Every test has a summary: case id, scenario → expected result, and the bug it catches | ✅ tan asked for it |
+
+### Test
+| # | Check | Result |
+|---|-------|--------|
+| 1 | T3.1 red: BR-1 tests fail for the right reason | ✅ 3 failed, all `NotImplementedException` (no compile or setup error) |
+| 2 | Format and line length | ✅ |
+
+**Test it yourself:**
+- [ ] `dotnet test backend` → 3 failed, each with `NotImplementedException`
