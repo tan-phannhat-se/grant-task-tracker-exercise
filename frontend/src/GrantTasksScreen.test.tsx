@@ -37,7 +37,10 @@ function pendingTask(id: number, grantId: number, title: string): Task {
 }
 
 const grantDetails: Record<string, GrantDetail> = {
-  '/api/grants/1': { ...grants[0], tasks: [pendingTask(1, 1, 'Verify bank details')] },
+  '/api/grants/1': {
+    ...grants[0],
+    tasks: [pendingTask(1, 1, 'Verify bank details'), pendingTask(2, 1, 'Request quote')],
+  },
   '/api/grants/3': { ...grants[1], tasks: [pendingTask(4, 3, 'Final acquittal review')] },
 }
 
@@ -47,13 +50,17 @@ const completedTask: Task = {
   completedDate: '2026-11-01',
 }
 
-/** Answers like the API: the grant list, one grant by its URL, or completing task 1. */
+// What the API sends when a task cannot be found, e.g. it was deleted after the screen loaded.
+const taskNotFound = new Response(
+  JSON.stringify({ status: 404, detail: 'Task 2 was not found.', code: 'task-not-found' }),
+  { status: 404, headers: { 'Content-Type': 'application/problem+json' } },
+)
+
+/** Answers like the API: the grant list, one grant by its URL, or completing task 1 (task 2 fails). */
 function fakeApi(url: string, init?: RequestInit): Promise<Response> {
   if (init?.method === 'PUT') {
     const isTaskOne = url === '/api/tasks/1/complete'
-    return Promise.resolve(
-      isTaskOne ? Response.json(completedTask) : new Response(null, { status: 404 }),
-    )
+    return Promise.resolve(isTaskOne ? Response.json(completedTask) : taskNotFound.clone())
   }
   const body = url === '/api/grants' ? grants : grantDetails[url]
   return Promise.resolve(body ? Response.json(body) : new Response(null, { status: 404 }))
@@ -101,5 +108,20 @@ describe('GrantTasksScreen', () => {
     expect(await within(updatedRow).findByText('Completed on 2026-11-01')).toBeInTheDocument()
     expect(within(updatedRow).queryByRole('button', { name: 'Complete' })).not.toBeInTheDocument()
     expect(fetch).toHaveBeenCalledWith('/api/tasks/1/complete', { method: 'PUT' })
+  })
+
+  /**
+   * FE-13: Complete fails (404 task-not-found) → the API's message in the box at the top of the screen.
+   * Catches: a failed Complete swallowed, so the officer thinks the task was completed.
+   */
+  it('CompleteTaskFails_ShowsApiMessageAtTop', async () => {
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    const row = await screen.findByRole('row', { name: /Request quote/ })
+
+    await user.click(within(row).getByRole('button', { name: 'Complete' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Task 2 was not found.')
+    expect(within(row).getByRole('button', { name: 'Complete' })).toBeInTheDocument()
   })
 })
