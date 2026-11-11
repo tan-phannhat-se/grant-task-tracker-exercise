@@ -11,6 +11,7 @@
 - T3.5 red: 6 BR-5 tests (written by the AI; the code is tan's)
 - T3.5 green: BR-5 in `Grant.Close()`, **written by tan**; AI review found 2 bugs (closed before checking, Medium blocked) and 4 style points, all fixed by tan
 - T3.6 red: 6 BR-6 tests (7 runs) and an `IsCompletedLate` stub so they compile
+- T3.6 green: `IsOverdue(today)` (BR-6) and `IsCompletedLate` (D26) in `GrantTask`; no `NotImplementedException` left in the domain
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
@@ -46,10 +47,15 @@
 | 12 | T3.5 red: BR-5 tests | ✅ 2 of 6 failed (`Assert.Throws`): BR5-1, BR5-2. The other 4 pass as guards against blocking too much |
 | 13 | T3.5 green (tan's code), then broken three ways on purpose | ✅ 24/24 passed · close before the check → BR5-1 red · High filter removed → 3 red · completion filter removed → BR5-4 red · restored |
 | 14 | T3.6 red | ✅ 7/7 runs failed on `NotImplementedException`; the other 24 tests still pass. The green step's break checks will prove the asserts |
+| 15 | T3.6 green, then broken three ways on purpose | ✅ 31/31 passed · `<=` → BR6-2 red · completion check removed → 3 red · late uses `>=` → BR6-6 red · restored |
 
-**Test it yourself:**
-- [ ] `dotnet test backend` → 24 passed
-- [ ] Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 2 tests fail → undo
-- [ ] `dotnet test backend --filter Br3` → 6 passed
-- [ ] Change `>` to `>=` in the BR-3 length check → BR3-2 fails → undo
-- [ ] `dotnet test backend --filter Br2` → 5 passed
+**Test it yourself:** run all with `dotnet test backend` → 31 passed, then each rule:
+
+| Rule | Run | Expect | Break on purpose → expect (then undo) |
+|------|-----|--------|----------------------------------------|
+| BR-1 | `dotnet test backend --filter Br1` | 3 passed | Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 2 fail |
+| BR-3 | `dotnet test backend --filter Br3` | 6 passed | `case > GrantTask.TitleMaxLength` → `>=` → BR3-2 fails |
+| BR-2 | `dotnet test backend --filter Br2` | 5 passed | `dueDate < earliestDueDate` → `<=` → BR2-2 and BR2-4 fail |
+| BR-4 | `dotnet test backend --filter Br4` | 4 passed | Remove `if (IsCompleted) return;` in `GrantTask.Complete` → BR4-2 fails |
+| BR-5 | `dotnet test backend --filter Br5` | 6 passed | Move `Status = GrantStatus.Closed;` above the check in `Grant.Close` → BR5-1 fails |
+| BR-6 | `dotnet test backend --filter Br6` | 7 passed | `DueDate < today` → `<=` in `GrantTask.IsOverdue` → BR6-2 fails |
