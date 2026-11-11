@@ -13,6 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<GrantTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("GrantTracker")));
 builder.Services.AddScoped<GrantService>();
+builder.Services.AddScoped<GrantTaskService>();
 
 // Enums go out by name ("Open"), so clients do not depend on the stored numbers.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -68,6 +69,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGrantEndpoints();
+app.MapTaskEndpoints();
 
 app.Run();
 

@@ -14,5 +14,6 @@ public static class ErrorCodes
     public const string PendingHighPriorityTasks = "pending-high-priority-tasks"; // BR-5
     public const string PriorityInvalid = "priority-invalid"; // only Low, Medium or High
     public const string GrantNotFound = "grant-not-found";
+    public const string TaskNotFound = "task-not-found";
     public const string StatusInvalid = "status-invalid"; // grant list filter: Open, Closed or All
 }
