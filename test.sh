@@ -10,6 +10,12 @@ echo "== Backend line length (max 120) =="
 long_lines=$(grep -rnE --include='*.cs' --exclude-dir=bin --exclude-dir=obj '^.{121,}$' backend || true)
 if [ -n "$long_lines" ]; then echo "$long_lines"; exit 1; fi
 
+echo "== No decision or OP numbers in code =="
+refs=$(grep -rnE --include='*.cs' --include='*.ts' --include='*.tsx' \
+  --exclude-dir=bin --exclude-dir=obj --exclude-dir=node_modules --exclude-dir=dist \
+  '\b(D[0-9]+|OP-[0-9]+)\b' backend frontend || true)
+if [ -n "$refs" ]; then echo "$refs"; exit 1; fi
+
 echo "== Backend tests =="
 dotnet test backend --nologo
 
