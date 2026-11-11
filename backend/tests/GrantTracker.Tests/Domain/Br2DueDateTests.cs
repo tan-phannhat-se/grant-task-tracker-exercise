@@ -25,6 +25,7 @@ public class Br2DueDateTests
         Assert.Equal(ErrorCodes.DueDateInPast, error.Code);
         Assert.Equal(DomainErrorKind.Validation, error.Kind);
         Assert.Equal("dueDate", error.Field);
+        Assert.Contains("2026-11-11", error.Message);
         Assert.Empty(grant.Tasks);
     }
 
@@ -52,6 +53,7 @@ public class Br2DueDateTests
         var error = Assert.Throws<DomainRuleException>(() => AddTask(grant, dueDate: new DateOnly(2026, 11, 15)));
 
         Assert.Equal(ErrorCodes.DueDateBeforeApplication, error.Code);
+        Assert.Equal(DomainErrorKind.Validation, error.Kind);
         Assert.Equal("dueDate", error.Field);
     }
 
@@ -82,6 +84,21 @@ public class Br2DueDateTests
         var error = Assert.Throws<DomainRuleException>(() => AddTask(grant, dueDate: Yesterday));
 
         Assert.Equal(ErrorCodes.DueDateBeforeApplication, error.Code);
+        Assert.Equal("dueDate", error.Field);
         Assert.Contains("2026-11-20", error.Message);
+    }
+
+    /// <summary>
+    /// BR2-6: a grant applying today refuses a task due yesterday with due-date-in-past.
+    /// Catches: the wrong code when today and the application date are the same day.
+    /// </summary>
+    [Fact]
+    public void AddTask_ApplicationTodayDueYesterday_IsRefusedAsInThePast()
+    {
+        var grant = OpenGrant(applicationDate: Today);
+
+        var error = Assert.Throws<DomainRuleException>(() => AddTask(grant, dueDate: Yesterday));
+
+        Assert.Equal(ErrorCodes.DueDateInPast, error.Code);
     }
 }

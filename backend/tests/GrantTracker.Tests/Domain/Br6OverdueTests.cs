@@ -89,4 +89,30 @@ public class Br6OverdueTests
 
         Assert.False(task.IsCompletedLate);
     }
+
+    /// <summary>
+    /// BR6-7: a task due 10 Nov and completed on 7 Nov is not completed late.
+    /// Catches: "completed late" true for any completion that is not on the due date.
+    /// </summary>
+    [Fact]
+    public void IsCompletedLate_CompletedBeforeDueDate_IsFalse()
+    {
+        var task = AddTask(OpenGrant(), dueDate: TenthOfNovember, addedOn: new DateOnly(2026, 11, 5));
+        task.Complete(new DateOnly(2026, 11, 7));
+
+        Assert.False(task.IsCompletedLate);
+    }
+
+    /// <summary>
+    /// BR6-8: a pending task due yesterday is overdue but not completed late.
+    /// Catches: a pending task flagged as completed late.
+    /// </summary>
+    [Fact]
+    public void IsCompletedLate_PendingPastDue_IsFalseAndOverdue()
+    {
+        var task = AddTask(OpenGrant(), dueDate: Today.AddDays(-1), addedOn: Today.AddDays(-5));
+
+        Assert.False(task.IsCompletedLate);
+        Assert.True(task.IsOverdue(Today));
+    }
 }

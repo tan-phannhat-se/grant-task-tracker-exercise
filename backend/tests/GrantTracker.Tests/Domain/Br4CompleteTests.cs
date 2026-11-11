@@ -55,7 +55,7 @@ public class Br4CompleteTests
 
     /// <summary>
     /// BR4-4: a Low-priority task on a closed grant can still be completed.
-    /// Catches: completion wrongly blocked on closed grants (D24).
+    /// Catches: nothing yet, because a task does not know its grant; it guards D24 if that link is added later.
     /// </summary>
     [Fact]
     public void Complete_TaskOnClosedGrant_IsAllowed()
@@ -65,6 +65,21 @@ public class Br4CompleteTests
         grant.Close();
 
         task.Complete(Today);
+
+        Assert.Equal(Today, task.CompletedDate);
+    }
+
+    /// <summary>
+    /// BR4-5: a task completed on 11 Nov and completed again with an earlier date (10 Nov) keeps 11 Nov.
+    /// Catches: the first date overwritten when the new date is earlier.
+    /// </summary>
+    [Fact]
+    public void Complete_AgainWithAnEarlierDate_KeepsTheFirstDate()
+    {
+        var task = AddTask(OpenGrant());
+        task.Complete(Today);
+
+        task.Complete(Today.AddDays(-1));
 
         Assert.Equal(Today, task.CompletedDate);
     }

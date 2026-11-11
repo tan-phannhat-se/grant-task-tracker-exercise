@@ -53,4 +53,19 @@ public class Br1ClosedGrantTests
 
         Assert.Equal(ErrorCodes.GrantClosed, error.Code);
     }
+
+    /// <summary>
+    /// BR1-4: a closed grant with a past due date reports grant-closed, not due-date-in-past.
+    /// Catches: the due-date check running before BR-1.
+    /// </summary>
+    [Fact]
+    public void AddTask_ClosedGrantAndPastDueDate_ReportsTheClosedGrantFirst()
+    {
+        var grant = OpenGrant();
+        grant.Close();
+
+        var error = Assert.Throws<DomainRuleException>(() => AddTask(grant, dueDate: Today.AddDays(-1)));
+
+        Assert.Equal(ErrorCodes.GrantClosed, error.Code);
+    }
 }

@@ -82,4 +82,18 @@ public class Br3TitleTests
 
         Assert.Equal(hundred, task.Title);
     }
+
+    /// <summary>
+    /// BR3-6: an empty title with a past due date reports title-required, not a due-date error.
+    /// Catches: the due-date check running before BR-3.
+    /// </summary>
+    [Fact]
+    public void AddTask_EmptyTitleAndPastDueDate_ReportsTheTitleFirst()
+    {
+        var grant = OpenGrant();
+
+        var error = Assert.Throws<DomainRuleException>(() => AddTask(grant, title: "", dueDate: Today.AddDays(-1)));
+
+        Assert.Equal(ErrorCodes.TitleRequired, error.Code);
+    }
 }
