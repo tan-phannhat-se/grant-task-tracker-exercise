@@ -138,6 +138,8 @@ Filled at the start of each step: one table per step, one commit per task.
 | D24 | Tasks on a closed grant can still be completed | Completing records work that was really done; it adds nothing, so BR-1 does not apply. A closed grant has no pending High task (BR-5), so only Low/Medium leftovers can be completed. |
 | D25 | A refused close names every pending High task in the message; no closed date is stored, so closing again just shows "already closed" | Tells the officer exactly what to finish. A closed date is not in the brief and would add a second source of truth next to `Status`. |
 | D26 | `GrantTask.IsCompletedLate` (completed after the due date), computed like `IsOverdue`; returned by the API and shown on screen as a "Completed late" label | Not in the brief; tan asked for it so "overdue" (still to do and late) and "completed late" (done, but late) stay separate, tested concepts. Costs one line. |
+| D27 | Domain rule violations throw `DomainRuleException` with a `Code`, a `Kind` (Validation → 400, RuleRefused → 409) and an optional `Field` (the input the error belongs to, so the screen shows it next to that input); one handler maps it to ProblemDetails | Simple and common in .NET. A new error needs no change in any endpoint (open/closed). |
+| D28 | No data annotations (`[Required]`, `[MaxLength]`) on domain classes; rules are enforced in domain methods, database mapping uses EF Fluent API in `Data/` | An annotation only labels a rule; a direct call can still break it. Each rule stays in one place and is unit-testable. |
 
 ## Open questions
 Decide in step 4: column lengths, indexes, cascade delete, seeding approach.
