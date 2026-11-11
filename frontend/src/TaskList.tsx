@@ -6,6 +6,40 @@ export interface TaskListProps {
 }
 
 /** The grant's tasks, with overdue tasks highlighted. */
-export default function TaskList(_props: TaskListProps) {
-  return null
+export default function TaskList({ tasks }: TaskListProps) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Priority</th>
+          <th>Due</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tasks.map((task) => (
+          <tr key={task.id} className={task.isOverdue ? 'overdue' : undefined}>
+            <td>{task.title}</td>
+            <td>{task.priority}</td>
+            <td>{task.dueDate}</td>
+            <td>
+              {task.completedDate ? (
+                <>
+                  <span>{`Completed on ${task.completedDate}`}</span>
+                  {task.completedLate && <span className="label">Completed late</span>}
+                </>
+              ) : (
+                <>
+                  {/* A text label as well as the colour, so overdue does not rely on colour alone */}
+                  {task.isOverdue && <span className="label">Overdue</span>}
+                  <button type="button">Complete</button>
+                </>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
 }

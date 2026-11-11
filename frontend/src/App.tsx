@@ -1,8 +1,6 @@
-// Placeholder. The grant tasks screen is built in the frontend step.
+import GrantTasksScreen from './GrantTasksScreen'
+
+/** The app has one screen. */
 export default function App() {
-  return (
-    <main>
-      <h1>Grant Task Tracker</h1>
-    </main>
-  )
+  return <GrantTasksScreen />
 }
