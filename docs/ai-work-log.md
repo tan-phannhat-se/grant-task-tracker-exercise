@@ -49,7 +49,7 @@ Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narr
 
 ---
 
-## Step 2 · Test cases · 2026-11-11 (in progress: T2.1, T2.2, T2.3, code style done; T2.4 next)
+## Step 2 · Test cases · 2026-11-11 (done; T2.4 moved into step 3 as one task per rule, D29)
 **Done:** code style D19 (`.editorconfig`, `dotnet format`, Prettier, format checks in `test.sh`) · T2.1 by tan: 29 domain test cases (BR-1 3, BR-2 5, BR-3 5, BR-4 4, BR-5 6, BR-6 6), decisions D20–D26 and the step 2 task table in `plan.md` · T2.2–T2.3: domain skeleton (`Grant`, `GrantTask`, `Priority`, `GrantStatus`, `DomainErrorKind`, `DomainRuleException`, `ErrorCodes`, one file each) with D27–D28; rule methods throw `NotImplementedException` until step 3 · test helpers (`TestData`).
 **Files touched:** `docs/plan.md`, `CLAUDE.md`, `test.sh`, `.editorconfig` · `backend/src/GrantTracker.Api/Domain/` · `backend/tests/GrantTracker.Tests/` · `frontend/` (`package.json`, lock file, `.prettierrc.json`, `.prettierignore`, `tsconfig.json` reformatted).
 
@@ -77,7 +77,7 @@ Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narr
 | 3 | Bad spacing in `App.tsx` → `./test.sh` fails | ✅ exit 1, restored |
 | 4 | 133-character line in a C# file → `./test.sh` fails | ✅ exit 1, restored |
 
-**Missing:** no tests yet; T2.4 adds them (red until step 3).
+**Missing:** no tests yet; step 3 adds them rule by rule (red commit, then green commit).
 
 **Test it yourself:**
 - [ ] `./test.sh` passes

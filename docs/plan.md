@@ -44,7 +44,7 @@ Filled at the start of each step: one table per step, one commit per task.
 | T2.1 | Test case list for each BR | tan (AI reviews) | `docs/plan.md` |
 | T2.2 | Domain skeleton: `Grant`, `GrantTask`, enums, errors; no logic yet | AI | `backend/src/GrantTracker.Api/Domain/` |
 | T2.3 | Test helpers: fixed dates, sample grants and tasks | AI | `backend/tests/GrantTracker.Tests/Domain/` |
-| T2.4 | Test code for the approved cases; all red until step 3 | AI | `backend/tests/GrantTracker.Tests/Domain/` |
+| ~~T2.4~~ | Moved into step 3: each rule now ships its tests and code together (D29) | — | — |
 
 **T2.1 · Domain test cases** (29, each catches a different bug)
 
@@ -101,6 +101,21 @@ Filled at the start of each step: one table per step, one commit per task.
 | BR6-5 | Due 10 Nov, completed 11 Nov → `IsCompletedLate` true, `IsOverdue` false | Late and overdue mixed up (D26) |
 | BR6-6 | Due 10 Nov, completed 10 Nov → `IsCompletedLate` false | `>=` instead of `>` (on the due date is on time) |
 
+### Step 3 · Business rules
+Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing tests (red), `feat(T3.x)` makes them pass (green).
+
+| Task | Rule | Code by | Files |
+|------|------|---------|-------|
+| T3.1 | BR-1 closed grant (3 cases) | AI | `Domain/Grant.cs` · `tests/Domain/Br1ClosedGrantTests.cs` |
+| T3.2 | BR-3 title (5 cases) | AI | `Domain/Grant.cs` · `tests/Domain/Br3TitleTests.cs` |
+| T3.3 | BR-2 due date (5 cases) | AI | `Domain/Grant.cs` · `tests/Domain/Br2DueDateTests.cs` |
+| T3.4 | BR-4 complete (4 cases) | AI | `Domain/GrantTask.cs` · `tests/Domain/Br4CompleteTests.cs` |
+| T3.5 | BR-5 close grant (6 cases) | **tan** (AI writes the tests) | `Domain/Grant.cs` · `tests/Domain/Br5CloseGrantTests.cs` |
+| T3.6 | BR-6 overdue and completed late (6 cases) | AI | `Domain/GrantTask.cs` · `tests/Domain/Br6OverdueTests.cs` |
+| T3.7 | Independent review of all six rules by a reviewer subagent | AI | — |
+
+T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because all three change `Grant.AddTask`. T3.4 and T3.6 only touch `GrantTask.cs` and their own test files.
+
 **Test notes for later steps**
 - Step 4 (API): `POST` a task to GR-100003 (closed in the seed) → 409 with `code: grant-closed`.
 - Step 4 (API): `POST` a task with no `title` in the JSON → 400 `title-required` (null is handled at the API boundary, D23).
@@ -140,6 +155,7 @@ Filled at the start of each step: one table per step, one commit per task.
 | D26 | `GrantTask.IsCompletedLate` (completed after the due date), computed like `IsOverdue`; returned by the API and shown on screen as a "Completed late" label | Not in the brief; tan asked for it so "overdue" (still to do and late) and "completed late" (done, but late) stay separate, tested concepts. Costs one line. |
 | D27 | Domain rule violations throw `DomainRuleException` with a `Code`, a `Kind` (Validation → 400, RuleRefused → 409) and an optional `Field` (the input the error belongs to, so the screen shows it next to that input); one handler maps it to ProblemDetails | Simple and common in .NET. A new error needs no change in any endpoint (open/closed). |
 | D28 | No data annotations (`[Required]`, `[MaxLength]`) on domain classes; rules are enforced in domain methods, database mapping uses EF Fluent API in `Data/` | An annotation only labels a rule; a direct call can still break it. Each rule stays in one place and is unit-testable. |
+| D29 | Business rules are built one rule at a time (vertical slices): a red commit with that rule's tests, then a green commit with its code | Real TDD cycles (red → green → refactor) that show in `git log`; each rule can be reviewed with its own tests, and only the red commits fail `./test.sh`. |
 
 ## Open questions
 Decide in step 4: column lengths, indexes, cascade delete, seeding approach.
