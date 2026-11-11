@@ -92,7 +92,21 @@ public class Grant
     /// </summary>
     public void Close()
     {
-        // TODO T3.5 (tan): BR-5, refuse while a High-priority task is pending.
+        // BR-5, refuse while a High-priority task is pending.
+        var pendingHighTasks = _tasks
+            .Where(t => !t.IsCompleted)
+            .Where(t => t.Priority == Priority.High)
+            .ToList();
+
+        if (pendingHighTasks.Any())
+        {
+            var taskTitles = string.Join(", ", pendingHighTasks.Select(t => t.Title));
+            throw new DomainRuleException(
+                ErrorCodes.PendingHighPriorityTasks,
+                DomainErrorKind.RuleRefused,
+                "Cannot close a grant with a High-priority task pending: " + taskTitles);
+        }
+
         Status = GrantStatus.Closed; // closing a closed grant again changes nothing
     }
 }
