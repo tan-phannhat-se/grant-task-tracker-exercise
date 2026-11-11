@@ -1,0 +1,36 @@
+# Code style for every editor and for `dotnet format` (D19).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cs,csx}]
+indent_size = 4
+
+# Braces on their own line (standard .NET style).
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# File-scoped namespaces and `var` where the type is obvious.
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_when_type_is_apparent = true:suggestion
+
+# Usings: System first.
+dotnet_sort_system_directives_first = true
+
+[*.{csproj,props,targets}]
+indent_size = 2
+
+# Visual Studio writes solution files with tabs; leave them as they are.
+[*.sln]
+indent_style = tab

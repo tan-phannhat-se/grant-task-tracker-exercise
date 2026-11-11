@@ -17,7 +17,7 @@ A take-home exercise: a small tool for grants officers to see grants, add tasks,
 ## Stack and commands
 - Backend: .NET 8, ASP.NET Core minimal API, EF Core 8 + SQLite, xUnit. SDK pinned in `global.json`.
 - Frontend: React 19 + TypeScript, Vite, Vitest + Testing Library.
-- Run every test: `./test.sh` (must pass before every commit).
+- Run every check (format, tests, type-check): `./test.sh` (must pass before every commit).
 - API: `dotnet run --project backend/src/GrantTracker.Api` → http://localhost:5080 (Swagger UI at `/swagger`, Development only)
 - Frontend: `cd frontend && npm run dev` → http://localhost:5173 (`/api/*` is proxied to the API).
 
@@ -45,6 +45,7 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 - Never use or paste code or data from tan's employer.
 
 ## Code style
+- **Format:** code must pass the format check in `./test.sh` (D19). Run `dotnet format backend/GrantTracker.sln` and `cd frontend && npm run format` before handing work over.
 - **Simple and clear first.** A newcomer must understand the code on first read: plain logic, small methods, clear names, no clever tricks.
 - **Apply SOLID, but keep it simple.** Use it where it makes the code clearer, not as a checklist: no interface, layer or abstraction without a concrete reason (the brief says "don't over-engineer").
   - **S**ingle responsibility: one job per class. Domain = rules, Services = use cases, Data = storage, Endpoints = HTTP.

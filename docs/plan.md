@@ -59,6 +59,7 @@ Filled at the start of each step: one table per step, one commit per task.
 | D16 | Errors: 400 bad input · 404 not found · 409 rule refused; ProblemDetails with a `code` | 400 = fix your input. 409 = the current state forbids it. |
 | D17 | `Grant.Status` stored as gapped ints: Open = 100, Closed = 200 | Same rule as `Priority` (D5): one convention for every enum. |
 | D18 | `EnsureCreated`; Development recreates and reseeds on start; never deletes elsewhere | Seed dates stay relative to today. OP-1: no data loss on restart. Migrations before going live. |
+| D19 | Code style: C# uses the standard .NET style (4 spaces, braces on their own line) via `.editorconfig` + `dotnet format`; the frontend uses Prettier. `./test.sh` fails on badly formatted code | tan chose the .NET default style: what C# reviewers expect. A checked format keeps AI-written and hand-written code identical. |
 
 ## Open questions
 Decide in step 4: column lengths, indexes, cascade delete, seeding approach.
