@@ -44,3 +44,13 @@ tr.overdue .label {
 .error {
   color: #b00020;
 }
+
+form label {
+  display: block;
+  margin-top: 8px;
+}
+
+form button {
+  display: block;
+  margin-top: 12px;
+}

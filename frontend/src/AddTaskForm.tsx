@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { addTask, type Priority } from './api/grantsApi'
+import { addTask, ApiError, type Priority } from './api/grantsApi'
 
 const titleMaxLength = 100 // the API's limit (BR-3)
+const addErrorMessage = 'Could not add the task. Please try again.'
 
 /** What the form needs: the grant to add to, and what to do once a task is added. */
 export interface AddTaskFormProps {
@@ -10,12 +11,14 @@ export interface AddTaskFormProps {
 }
 
 /** The Add task form: checks the input, sends it, shows the API's errors. */
-export default function AddTaskForm({ grantId }: AddTaskFormProps) {
+export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
   const [title, setTitle] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [priority, setPriority] = useState<Priority>('Medium')
   const [titleError, setTitleError] = useState<string | null>(null)
   const [dueDateError, setDueDateError] = useState<string | null>(null)
+  // An error that belongs to no input, e.g. the grant is closed
+  const [formError, setFormError] = useState<string | null>(null)
 
   /** Checks the input first; only input that passes is sent. */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -25,16 +28,46 @@ export default function AddTaskForm({ grantId }: AddTaskFormProps) {
     const newDueDateError = dueDate === '' ? 'Due date is required.' : null
     setTitleError(newTitleError)
     setDueDateError(newDueDateError)
+    setFormError(null)
     if (newTitleError !== null || newDueDateError !== null) {
       return
     }
 
     addTask(grantId, { title: trimmedTitle, dueDate, priority })
+      .then(() => {
+        setTitle('')
+        setDueDate('')
+        onAdded()
+      })
+      .catch(showApiError)
+  }
+
+  /** Shows the API's message under the input it names, or at the top of the form. */
+  function showApiError(error: unknown) {
+    if (!(error instanceof ApiError)) {
+      setFormError(addErrorMessage)
+      return
+    }
+    switch (error.field) {
+      case 'title':
+        setTitleError(error.message)
+        break
+      case 'dueDate':
+        setDueDateError(error.message)
+        break
+      default:
+        setFormError(error.message)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add task</h2>
+    <form onSubmit={handleSubmit} aria-labelledby="add-task-heading">
+      <h2 id="add-task-heading">Add task</h2>
+      {formError && (
+        <p role="alert" className="error">
+          {formError}
+        </p>
+      )}
 
       <label htmlFor="task-title">Title</label>
       <input

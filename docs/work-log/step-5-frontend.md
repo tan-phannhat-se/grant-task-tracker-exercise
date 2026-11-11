@@ -17,10 +17,12 @@
 - T5.4 green: `AddTaskForm` (title trimmed then checked, due date required, priority starts at Medium; errors linked to their input with `aria-describedby`; sends with `addTask`); D53 adds "Priority starts at Medium" (tan chose)
 - T5.5 red: FE-9, FE-10 (`AddTaskForm` alone), FE-11 (screen; the fake API now adds tasks, with fresh data for each test so no test sees another's task)
 - `./test.sh` checks frontend lines over 100 characters (tan approved); counted in UTF-8 because `bash` grep counts bytes by default; the 10 long comment lines wrapped
+- T5.5 green: `AddTaskForm` shows API errors (one `switch` on `field`: under Title, under Due date, else at the top of the form), empties title and date after adding (priority kept); the screen shows the form and reloads the grant after adding; a new form per grant (`key`), so input never carries over; form labels on their own lines (`index.css`)
+- Tried in the browser with the restarted API: BR-2 (due 2020-01-01) → "Due date must be on or after 2026-11-11." under Due date; valid task → new row in date order, form empty; BR-1 on GR-100003 → "Grant GR-100003 is closed, so no task can be added." at the top of the form
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
-- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4) · `AddTaskForm.test.tsx` · `GrantTasksScreen.test.tsx` (T5.5) · `TaskList.tsx` · `api/grantsApi.ts` · `api/grantsApi.test.ts` (wrapped lines)
+- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4) · `AddTaskForm.test.tsx` · `GrantTasksScreen.test.tsx` (T5.5) · `TaskList.tsx` · `api/grantsApi.ts` · `api/grantsApi.test.ts` (wrapped lines) · `AddTaskForm.tsx` · `GrantTasksScreen.tsx` · `index.css` (T5.5)
 - `test.sh` (frontend line length)
 - `docs/plan.md` (D50: opens on the first grant; D53: priority) · `CLAUDE.md` (frontend exception to "one type per file") · `docs/ai-log.md`
 - `docs/plan.md` (Step 5 task table, D50–D54) · `docs/work-log/step-5-frontend.md`
@@ -34,7 +36,7 @@
 | 2 | T5.2 | 🔧 `isLatest && setGrant(...)` rewritten as a plain `if` ("no clever tricks") · ✅ no new package, no state library |
 | 1 | T5.1 | ✅ diff re-read against D35, D49, D51, D54: no extra calls (close and overdue not used by this screen) |
 
-**Missing:** T5.5–T5.6 · the form is not on the screen yet (T5.5)
+**Missing:** T5.6 (final log)
 
 **Review it yourself:**
 1. `docs/plan.md` D50–D54: do they say what you chose?
@@ -45,7 +47,7 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
-| 5 | T5.5 | ✅ 3 failed (FE-9, FE-10: message never shown, unhandled rejection · FE-11: form not on the screen) | ⏳ | ⏳ |
+| 5 | T5.5 | ✅ 3 failed (FE-9, FE-10: message never shown, unhandled rejection · FE-11: form not on the screen) | ✅ 18 passed · `./test.sh` exit 0 | ✅ 6 breaks, each red: dueDate error not under its input → FE-9 · error without field swallowed → FE-10 · errors not caught → FE-9, FE-10 · `onAdded` not called → FE-11 · title not cleared → FE-11 · grant not reloaded → FE-11 |
 | 4 | T5.4 | ✅ 5 failed (no form: no Title or Due date label) | ✅ 15 passed · frontend checks green; `./test.sh` red only on step 6's 2 `HealthCheckTests` | ✅ 7 breaks, each red: not trimmed before check → FE-6, FE-7b · `>=` → FE-7b · length check removed → FE-7a · empty check removed → FE-6 · due date check removed → FE-8 · error not linked to input → FE-6, FE-7a · untrimmed title sent → FE-7b |
 | 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) · FE-13: 1 failed (no alert, unhandled rejection) | ✅ 10 passed · frontend checks green; `./test.sh` red only on step 6's red backend tests (`HealthCheckTests`, `AddTaskRetryTests`) | ✅ 5 breaks, each red: button calls nothing → FE-5, FE-13 · wrong id sent → FE-13 · screen uses its own today → FE-5 · row not replaced → FE-5 · API message ignored → FE-13 |
 | 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
@@ -71,7 +73,7 @@
 | FE-13 | Complete fails (404 `task-not-found`) → the API's message at the top of the screen (added with D51) | A failed Complete swallowed |
 | FE-12 | No tasks → "No tasks yet.", no table (added at tan's request) | A bare table header that looks like a loading error |
 
-**Missing:** T5.5–T5.6 · no test for: clearing an old error when Complete is clicked again ·  the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
+**Missing:** T5.6 · no test for: the form emptied when the grant changes (`key`) · a non-API error when adding (step 6 adds the unreachable message) · clearing an old error when Complete is clicked again ·  the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
 
 **Test it yourself:**
 
@@ -79,10 +81,10 @@
 |-------|-----|--------|----------------------------------------|
 | API client (T5.1) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 3 passed | In `grantsApi.ts` change `method: 'POST'` to `'PUT'` → API-1 fails |
 | Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | 4 passed | In `TaskList.tsx` change `className={task.isOverdue ? 'overdue' : undefined}` to `className="overdue"` → FE-2 fails |
-| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late" | — |
+| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late"; add a task due 2020-01-01 → BR-2 error under Due date; GR-100003 + any task → BR-1 error at the top of the form | — |
 | Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 3 passed | In `TaskList.tsx` change `onComplete(task.id)` to `onComplete(task.grantId)` → FE-13 fails |
 | Form checks (T5.4) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | 5 passed | In `AddTaskForm.tsx` change `trimmedTitle.length > titleMaxLength` to `>=` → FE-7b fails |
-| API errors and adding (T5.5) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx src/GrantTasksScreen.test.tsx)` | Now (red): 3 failed · after green: all passed | ⏳ written at green |
+| API errors and adding (T5.5) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx src/GrantTasksScreen.test.tsx)` | 9 passed | In `AddTaskForm.tsx` change `case 'dueDate':` to `case 'due-date':` → FE-9 fails |
 | Line length | `./test.sh` | Section "Frontend line length (max 100)" prints nothing | Add a 101-character comment line in `TaskList.tsx` → `./test.sh` prints it and stops |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |

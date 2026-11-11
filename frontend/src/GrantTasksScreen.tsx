@@ -7,6 +7,7 @@ import {
   type GrantDetail,
   type GrantListItem,
 } from './api/grantsApi'
+import AddTaskForm from './AddTaskForm'
 import TaskList from './TaskList'
 
 const loadErrorMessage = 'Could not load the grants. Please try again.'
@@ -50,6 +51,13 @@ export default function GrantTasksScreen() {
       isLatest = false
     }
   }, [selectedGrantId])
+
+  /** Loads the grant again, so a new task shows in the server's order with its flags. */
+  function reloadGrant(grantId: number) {
+    getGrant(grantId)
+      .then(setGrant)
+      .catch(() => setScreenError(loadErrorMessage))
+  }
 
   /** Completes a task and shows it as the API returns it, so a repeat keeps the first date. */
   function handleComplete(taskId: number) {
@@ -97,6 +105,8 @@ export default function GrantTasksScreen() {
             Status: <span className="label">{grant.status}</span> · Applied {grant.applicationDate}
           </p>
           <TaskList tasks={grant.tasks} onComplete={handleComplete} />
+          {/* A new key per grant empties the form, so input and errors never carry over */}
+          <AddTaskForm key={grant.id} grantId={grant.id} onAdded={() => reloadGrant(grant.id)} />
         </section>
       )}
     </main>
