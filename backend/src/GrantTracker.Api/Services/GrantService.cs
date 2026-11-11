@@ -10,13 +10,17 @@ namespace GrantTracker.Api.Services;
 public class GrantService
 {
     private readonly GrantTrackerDbContext _db;
+    private readonly ConfiguredTimeZoneCalendar _calendar;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
-    /// Creates the service for one request's database session.
+    /// Creates the service for one request's database session and the app's clock.
     /// </summary>
-    public GrantService(GrantTrackerDbContext db)
+    public GrantService(GrantTrackerDbContext db, ConfiguredTimeZoneCalendar calendar, TimeProvider timeProvider)
     {
         _db = db;
+        _calendar = calendar;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -44,9 +48,24 @@ public class GrantService
             .AsNoTracking()
             .SingleOrDefaultAsync(g => g.Id == id);
 
-        return grant ?? throw new DomainRuleException(
-            ErrorCodes.GrantNotFound,
-            DomainErrorKind.NotFound,
-            $"Grant {id} was not found.");
+        return grant ?? throw GrantNotFound(id);
     }
+
+    /// <summary>
+    /// Adds a task to a grant through the domain rules, then saves it.
+    /// </summary>
+    public async Task<GrantTask> AddTaskAsync(int grantId, string title, DateOnly dueDate, Priority priority)
+    {
+        // Tasks are not loaded: adding one needs only the grant's status and application date.
+        var grant = await _db.Grants.SingleOrDefaultAsync(g => g.Id == grantId) ?? throw GrantNotFound(grantId);
+
+        var task = grant.AddTask(title, dueDate, priority, _calendar.Today(), _timeProvider.GetUtcNow().UtcDateTime);
+        await _db.SaveChangesAsync();
+        return task;
+    }
+
+    private static DomainRuleException GrantNotFound(int id) => new(
+        ErrorCodes.GrantNotFound,
+        DomainErrorKind.NotFound,
+        $"Grant {id} was not found.");
 }

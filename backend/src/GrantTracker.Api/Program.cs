@@ -32,6 +32,10 @@ builder.Services.AddSingleton(services =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainRuleExceptionHandler>();
 
+// A body that cannot be read gets a 400 in every environment.
+// Development would otherwise throw it, and the exception handler would turn it into a 500.
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);
+
 var app = builder.Build();
 
 // Created now, so an unknown App:TimeZone stops the start-up instead of failing the first request.

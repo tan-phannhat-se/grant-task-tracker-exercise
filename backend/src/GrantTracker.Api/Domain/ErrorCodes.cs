@@ -8,6 +8,7 @@ public static class ErrorCodes
     public const string GrantClosed = "grant-closed"; // BR-1
     public const string DueDateInPast = "due-date-in-past"; // BR-2
     public const string DueDateBeforeApplication = "due-date-before-application"; // BR-2
+    public const string DueDateRequired = "due-date-required"; // the JSON had no dueDate
     public const string TitleRequired = "title-required"; // BR-3
     public const string TitleTooLong = "title-too-long"; // BR-3
     public const string PendingHighPriorityTasks = "pending-high-priority-tasks"; // BR-5

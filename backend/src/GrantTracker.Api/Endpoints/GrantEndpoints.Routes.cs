@@ -12,5 +12,6 @@ public static partial class GrantEndpoints
     {
         app.MapGet("/grants", ListGrants);
         app.MapGet("/grants/{id:int}", GetGrant);
+        app.MapPost("/grants/{id:int}/tasks", AddTask);
     }
 }
