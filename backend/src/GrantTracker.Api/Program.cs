@@ -24,17 +24,23 @@ builder.Services.AddSingleton(services =>
 var app = builder.Build();
 
 // Created now, so an unknown App:TimeZone stops the start-up instead of failing the first request.
-app.Services.GetRequiredService<ConfiguredTimeZoneCalendar>();
+var calendar = app.Services.GetRequiredService<ConfiguredTimeZoneCalendar>();
 
 using (var scope = app.Services.CreateScope())
 {
-    var database = scope.ServiceProvider.GetRequiredService<GrantTrackerDbContext>().Database;
+    var db = scope.ServiceProvider.GetRequiredService<GrantTrackerDbContext>();
     if (app.Environment.IsDevelopment())
     {
-        database.EnsureDeleted(); // seed dates are relative to today, so Development starts fresh
+        // Seed dates are relative to today, so Development starts fresh every time.
+        // The sample data is fictional, so no other environment gets it.
+        db.Database.EnsureDeleted();
+        db.Database.EnsureCreated();
+        SeedData.Seed(db, calendar.Today());
     }
-
-    database.EnsureCreated(); // other environments keep their data across restarts
+    else
+    {
+        db.Database.EnsureCreated(); // keeps existing data across restarts
+    }
 }
 
 // Swagger only in Development: it is a tool for developers and reviewers, not for officers.
