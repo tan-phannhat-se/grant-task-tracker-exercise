@@ -123,7 +123,10 @@ describe('GrantTasksScreen', () => {
     const updatedRow = await screen.findByRole('row', { name: /Verify bank details/ })
     expect(await within(updatedRow).findByText('Completed on 2026-11-01')).toBeInTheDocument()
     expect(within(updatedRow).queryByRole('button', { name: 'Complete' })).not.toBeInTheDocument()
-    expect(fetch).toHaveBeenCalledWith('/api/tasks/1/complete', { method: 'PUT' })
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/tasks/1/complete',
+      expect.objectContaining({ method: 'PUT' }),
+    )
   })
 
   /**

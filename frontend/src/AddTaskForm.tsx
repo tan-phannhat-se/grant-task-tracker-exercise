@@ -33,7 +33,7 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
       return
     }
 
-    addTask(grantId, { title: trimmedTitle, dueDate, priority })
+    addTask(grantId, { title: trimmedTitle, dueDate, priority }, crypto.randomUUID())
       .then(() => {
         setTitle('')
         setDueDate('')

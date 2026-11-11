@@ -66,6 +66,11 @@ interface ProblemDetails {
 
 const checkTheFormMessage = 'Check the form and try again.'
 const somethingWentWrongMessage = 'Something went wrong. Please try again.'
+const serverUnreachableCode = 'server-unreachable'
+const serverUnreachableMessage = 'Cannot reach the server. Check your connection and try again.'
+const requestTimeLimitMs = 15_000
+// What a proxy answers when it cannot reach the API behind it
+const proxyCannotReachApiStatuses = [502, 503, 504]
 
 /** Lists every grant, open and closed. */
 export function getGrants(): Promise<GrantListItem[]> {
@@ -77,11 +82,14 @@ export function getGrant(grantId: number): Promise<GrantDetail> {
   return send(`/grants/${grantId}`)
 }
 
-/** Adds a task to a grant and returns the saved task. */
-export function addTask(grantId: number, task: NewTask): Promise<Task> {
+/**
+ * Adds a task to a grant and returns the saved task.
+ * Sending the same request again with the same key returns the same task, never a second one.
+ */
+export function addTask(grantId: number, task: NewTask, idempotencyKey: string): Promise<Task> {
   return send(`/grants/${grantId}/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify(task),
   })
 }
@@ -93,7 +101,16 @@ export function completeTask(taskId: number): Promise<Task> {
 
 /** Sends one request and returns the JSON body, or throws an ApiError. */
 async function send<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, init)
+  let response: Response
+  try {
+    response = await fetch(`/api${path}`, {
+      ...init,
+      signal: AbortSignal.timeout(requestTimeLimitMs),
+    })
+  } catch {
+    // No answer at all: no connection, or the time limit passed.
+    throw serverUnreachable(0)
+  }
   if (!response.ok) {
     throw await toApiError(response)
   }
@@ -102,6 +119,9 @@ async function send<T>(path: string, init?: RequestInit): Promise<T> {
 
 /** Turns a failed response into an ApiError; only ProblemDetails has a code and a message. */
 async function toApiError(response: Response): Promise<ApiError> {
+  if (proxyCannotReachApiStatuses.includes(response.status)) {
+    return serverUnreachable(response.status)
+  }
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!contentType.startsWith('application/problem+json')) {
     // A badly formatted value gets a 400 with an empty body, so the field is unknown.
@@ -116,4 +136,9 @@ async function toApiError(response: Response): Promise<ApiError> {
     problem.field ?? null,
     problem.detail ?? somethingWentWrongMessage,
   )
+}
+
+/** The error for a server that cannot be reached; status 0 when there was no answer at all. */
+function serverUnreachable(status: number): ApiError {
+  return new ApiError(status, serverUnreachableCode, null, serverUnreachableMessage)
 }

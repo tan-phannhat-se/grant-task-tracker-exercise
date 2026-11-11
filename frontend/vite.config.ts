@@ -14,6 +14,16 @@ export default defineConfig({
         target: apiUrl,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        // When the API is down, answer 502 like a real proxy (Vite would send a 500),
+        // so the screen can tell the officer the server cannot be reached.
+        configure: (proxy) => {
+          proxy.on('error', (_error, _request, response) => {
+            if ('writeHead' in response && !response.headersSent) {
+              response.writeHead(502)
+              response.end()
+            }
+          })
+        },
       },
     },
   },
