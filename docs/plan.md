@@ -142,7 +142,7 @@ Each endpoint is one task, done test-first like step 3: a red commit with its in
 | T4.1 | DbContext and EF configuration (D36–D38); database created on start (D18); "today" from the configured time zone (D15) | AI | `Data/` · `Services/` · `Program.cs` |
 | T4.2 | Seed data (D33, D39, D40), with tests that it matches the brief's table | AI | `Data/` · `Program.cs` · `tests/Data/` |
 | T4.3 | API foundation: domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider), start-up tests (seed only in Development, bad time zone) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
-| T4.4 | `GET /grants` (status filter, pending task count); first service; enums as strings (moved from T4.3: first response that shows them) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
+| T4.4 | `GET /grants` (status filter, pending task count; D41–D43); first service; enums as strings (moved from T4.3: first response that shows them) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
 | T4.5 | `GET /grants/{id}` | AI | same |
 | T4.6 | `POST /grants/{id}/tasks` (201; missing fields handled at the boundary, D23) | AI | same |
 | T4.7 | `PUT /tasks/{id}/complete` | AI | same |
@@ -206,3 +206,6 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D38 | Deleting a grant that still has tasks is restricted, not cascaded | The brief has no delete and ends a grant by closing it; support and reporting need history (OP-4, OP-6), so tasks are never lost silently. |
 | D39 | Seed data is added only in Development, right after the database is recreated | The brief's data is fictional; a real office must never see sample grants. `dotnet run` uses Development, so reviewers still get the seed. |
 | D40 | Seeded tasks get `CreatedAt` = their grant's application date at 00:00 UTC | Matches D33's replayed history (each task is added on the application date), and the seed needs only "today". |
+| D41 | `Grant.PendingTaskCount` is computed in the domain; the service loads each grant with its tasks | "Pending" is defined in one place (`IsCompleted`). Trade-off: tasks are loaded only to count them; count in SQL once data grows (README). |
+| D42 | `GET /grants?status=Open\|Closed\|All`, case-insensitive; missing = all; anything else (including numbers such as `100`) → 400 `status-invalid` on `status` | Same filter values as the overdue list (D14); a number would otherwise bind to an enum value silently. |
+| D43 | The grant list is ordered by reference number | A stable, predictable order for the screen and the tests. |
