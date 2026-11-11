@@ -165,6 +165,18 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 - Step 7 (README, known issues): a badly formatted value in "add task" gets a 400 with an empty body (D49); the screen shows a general "check the form" message.
 - Step 7 (README, known issues): on .NET 8 the exception middleware logs every handled 400/409 as an "unhandled exception" Error, so logs are noisy for support (OP-4). Accepted (tan: a fix would be over-engineering); .NET 10 can turn this off.
 
+### Step 5 · Frontend
+Each task is done test-first like step 4: a red commit with its Vitest tests, then a green commit. Test cases: `docs/work-log/step-5-frontend.md`.
+
+| Task | Work | Code by | Files |
+|------|------|---------|-------|
+| T5.1 | Typed API client: four calls, `ApiError` with `status`, `code`, `field`, `message` (API-1..3) | AI | `frontend/src/api/grantsApi.ts` + test |
+| T5.2 | Grant drop-down and task table: overdue, completed on, completed late (FE-1..4) | AI | `src/GrantTasksScreen.tsx` · `src/TaskList.tsx` · `src/App.tsx` · `src/index.css` + tests |
+| T5.3 | Complete button (FE-5) | AI | `src/TaskList.tsx` · `src/GrantTasksScreen.tsx` + tests |
+| T5.4 | Add task form: client checks (FE-6..8, D53) | AI | `src/AddTaskForm.tsx` + test |
+| T5.5 | Add task form: API errors (D51) and success (FE-9..11) | AI | `src/AddTaskForm.tsx` · `src/GrantTasksScreen.tsx` + tests |
+| T5.6 | Try it in the browser against the running API; step 5 log | AI | `docs/` |
+
 ## Decisions
 | # | Decision | Why |
 |---|----------|-----|
@@ -217,3 +229,8 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D47 | Tasks in a grant are ordered by due date, then id | The most urgent work is at the top of the screen, in a stable order. |
 | D48 | Missing fields in "add task": no `title` → passed as empty, so the domain reports `title-required` · no `priority` → passed as 0, so the domain reports `priority-invalid` (D30) · no `dueDate` → 400 `due-date-required` at the endpoint (the domain has no stand-in for a date) | Each missing field gets a clear code on its own field. Title and priority go through the domain, so the check order stays one rule (D20: a closed grant reports `grant-closed` first). A separate priority check at the endpoint was removed: breaking it on purpose changed nothing. |
 | D49 | A badly formatted value (e.g. `dueDate: "2020-13-45"`, `priority: "Urgent"`, broken JSON) gets the framework's 400 with an empty body (checked by hand; no `code` or `field`) | Little code; the screen uses a date picker and a drop-down, so this is rare. Noted in the README. |
+| D50 | The screen is one column, top to bottom: grant drop-down, grant details (status, application date), task table, Add task form | Reads in the order an officer works; nothing to arrange. |
+| D51 | An error that belongs to one input (the API's `field`, or a client check) shows under that input; any other error (e.g. `grant-closed`, `grant-not-found`, the empty-body 400) shows in one box at the top of the form. The text is the API's `detail` | The officer sees what to fix where. The domain's messages already name the date that will work, so the screen and the API never word a rule differently. |
+| D52 | The Add task form stays usable on a closed grant, which shows a "Closed" label; the API refuses with 409 and the screen shows that error | BR-1 stays in one place (the server), and the brief asks the screen to show BR-1's API error. Trade-off: the officer learns it after submitting. |
+| D53 | Client checks: title required and at most 100 characters after trimming (same count as the API), due date required. BR-2 is left to the API | "Today" belongs to the server's time zone; a check with the officer's clock could disagree around midnight. |
+| D54 | The API client's types (`Task`, `GrantDetail`…) live in its one module, `frontend/src/api/grantsApi.ts`, an exception to "one type per file" | `CLAUDE.md` asks for the API client in one typed module; the types describe the API's JSON and change together. |
