@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from './api/grantsApi'
@@ -58,7 +58,8 @@ describe('AddTaskForm client checks', () => {
   })
 
   /**
-   * FE-7a: a 101-character title → "Title must be 100 characters or fewer." under Title, nothing sent.
+   * FE-7a: a 101-character title → "Title must be 100 characters or fewer." under Title,
+   * nothing sent.
    * Catches: the length check missing.
    */
   it('TitleOf101Characters_ShowsErrorUnderTitle_SendsNothing', async () => {
@@ -102,5 +103,56 @@ describe('AddTaskForm client checks', () => {
 
     expect(screen.getByLabelText('Due date')).toHaveAccessibleDescription('Due date is required.')
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+/** A ProblemDetails answer, as the API sends for a broken rule. */
+function problem(status: number, code: string, detail: string, field?: string): Response {
+  return new Response(JSON.stringify({ status, code, detail, field }), {
+    status,
+    headers: { 'Content-Type': 'application/problem+json' },
+  })
+}
+
+describe('AddTaskForm API errors', () => {
+  /**
+   * FE-9: the API refuses the due date (400 due-date-in-past on dueDate, BR-2)
+   * → its message under Due date.
+   * Catches: an API error that names a field lost, or shown under the wrong input.
+   */
+  it('ApiRefusesDueDate_ShowsMessageUnderDueDate', async () => {
+    fetchMock.mockResolvedValue(
+      problem(400, 'due-date-in-past', 'Due date must be on or after 2026-11-11.', 'dueDate'),
+    )
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={1} onAdded={() => {}} />)
+
+    await fillAndSubmit(user, 'Check documents', '2026-11-01')
+
+    expect(await screen.findByText('Due date must be on or after 2026-11-11.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Due date')).toHaveAccessibleDescription(
+      'Due date must be on or after 2026-11-11.',
+    )
+    expect(screen.getByLabelText('Title')).not.toHaveAccessibleDescription()
+  })
+
+  /**
+   * FE-10: the API refuses because the grant is closed (409 grant-closed, no field, BR-1)
+   * → its message in the box at the top of the form.
+   * Catches: an API error without a field swallowed, so nothing tells the officer why.
+   */
+  it('ApiRefusesClosedGrant_ShowsMessageAtTopOfForm', async () => {
+    fetchMock.mockResolvedValue(
+      problem(409, 'grant-closed', 'Grant GR-100003 is closed, so no task can be added.'),
+    )
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={3} onAdded={() => {}} />)
+
+    await fillAndSubmit(user, 'Check documents', '2026-11-20')
+
+    const form = screen.getByRole('form', { name: 'Add task' })
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'Grant GR-100003 is closed, so no task can be added.',
+    )
   })
 })

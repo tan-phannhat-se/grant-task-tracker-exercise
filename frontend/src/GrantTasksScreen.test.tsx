@@ -36,13 +36,18 @@ function pendingTask(id: number, grantId: number, title: string): Task {
   }
 }
 
-const grantDetails: Record<string, GrantDetail> = {
-  '/api/grants/1': {
-    ...grants[0],
-    tasks: [pendingTask(1, 1, 'Verify bank details'), pendingTask(2, 1, 'Request quote')],
-  },
-  '/api/grants/3': { ...grants[1], tasks: [pendingTask(4, 3, 'Final acquittal review')] },
+/** The grants by URL, new for each test, so a task added in one test is never seen by another. */
+function freshGrantDetails(): Record<string, GrantDetail> {
+  return {
+    '/api/grants/1': {
+      ...grants[0],
+      tasks: [pendingTask(1, 1, 'Verify bank details'), pendingTask(2, 1, 'Request quote')],
+    },
+    '/api/grants/3': { ...grants[1], tasks: [pendingTask(4, 3, 'Final acquittal review')] },
+  }
 }
+
+let grantDetails = freshGrantDetails()
 
 // A date long past, as when a repeat keeps the first date: the screen must show it, not today.
 const completedTask: Task = {
@@ -56,8 +61,16 @@ const taskNotFound = new Response(
   { status: 404, headers: { 'Content-Type': 'application/problem+json' } },
 )
 
-/** Answers like the API: the grant list, one grant by its URL, or completing task 1 (task 2 fails). */
+/**
+ * Answers like the API: the grants, one grant, adding a task to grant 1,
+ * completing task 1 (completing task 2 fails).
+ */
 function fakeApi(url: string, init?: RequestInit): Promise<Response> {
+  if (init?.method === 'POST' && url === '/api/grants/1/tasks') {
+    const added: Task = { ...pendingTask(10, 1, ''), ...JSON.parse(String(init.body)) }
+    grantDetails['/api/grants/1'].tasks.push(added)
+    return Promise.resolve(Response.json(added, { status: 201 }))
+  }
   if (init?.method === 'PUT') {
     const isTaskOne = url === '/api/tasks/1/complete'
     return Promise.resolve(isTaskOne ? Response.json(completedTask) : taskNotFound.clone())
@@ -67,6 +80,7 @@ function fakeApi(url: string, init?: RequestInit): Promise<Response> {
 }
 
 beforeEach(() => {
+  grantDetails = freshGrantDetails()
   vi.stubGlobal('fetch', vi.fn(fakeApi))
 })
 
@@ -76,7 +90,8 @@ afterEach(() => {
 
 describe('GrantTasksScreen', () => {
   /**
-   * FE-1: opens on the first grant and shows its tasks; choosing another grant → its tasks and status.
+   * FE-1: opens on the first grant and shows its tasks;
+   * choosing another grant → its tasks and status.
    * Catches: tasks not reloaded when the grant changes, or the screen opening empty.
    */
   it('ChooseGrant_ShowsThatGrantsTasksAndStatus', async () => {
@@ -93,7 +108,8 @@ describe('GrantTasksScreen', () => {
   })
 
   /**
-   * FE-5: click Complete → PUT /api/tasks/1/complete; the row shows the completed date from the response.
+   * FE-5: click Complete → PUT /api/tasks/1/complete;
+   * the row shows the completed date from the response.
    * Catches: the screen showing its own "today" (a repeat would then show the wrong date),
    * or the button sending no request.
    */
@@ -111,7 +127,8 @@ describe('GrantTasksScreen', () => {
   })
 
   /**
-   * FE-13: Complete fails (404 task-not-found) → the API's message in the box at the top of the screen.
+   * FE-13: Complete fails (404 task-not-found)
+   * → the API's message in the box at the top of the screen.
    * Catches: a failed Complete swallowed, so the officer thinks the task was completed.
    */
   it('CompleteTaskFails_ShowsApiMessageAtTop', async () => {
@@ -123,5 +140,24 @@ describe('GrantTasksScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Task 2 was not found.')
     expect(within(row).getByRole('button', { name: 'Complete' })).toBeInTheDocument()
+  })
+
+  /**
+   * FE-11: add a valid task → it shows in the table, and the form is empty again.
+   * Catches: the table not refreshed after adding, or the form keeping its values
+   * (the officer would add the same task twice).
+   */
+  it('AddTask_NewTaskShowsInTable_FormIsCleared', async () => {
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    await screen.findByText('Verify bank details')
+
+    await user.type(screen.getByLabelText('Title'), 'Review budget')
+    await user.type(screen.getByLabelText('Due date'), '2026-11-25')
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+
+    expect(await screen.findByRole('row', { name: /Review budget/ })).toBeInTheDocument()
+    expect(screen.getByLabelText('Title')).toHaveValue('')
+    expect(screen.getByLabelText('Due date')).toHaveValue('')
   })
 })
