@@ -143,7 +143,7 @@ Each endpoint is one task, done test-first like step 3: a red commit with its in
 | T4.2 | Seed data (D33, D39, D40), with tests that it matches the brief's table | AI | `Data/` · `Program.cs` · `tests/Data/` |
 | T4.3 | API foundation: domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider), start-up tests (seed only in Development, bad time zone) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
 | T4.4 | `GET /grants` (status filter, pending task count; D41–D43); first service; enums as strings (moved from T4.3: first response that shows them) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
-| T4.5 | `GET /grants/{id}` | AI | same |
+| T4.5 | `GET /grants/{id}` with tasks (D46, D47); `TaskResponse` shared by later endpoints | AI | same |
 | T4.6 | `POST /grants/{id}/tasks` (201; missing fields handled at the boundary, D23) | AI | same |
 | T4.7 | `PUT /tasks/{id}/complete` | AI | same |
 | T4.8 | `PUT /grants/{id}/close` (loads the grant with its tasks) | AI | same |
@@ -212,3 +212,5 @@ The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3)
 | D43 | The grant list is ordered by reference number | A stable, predictable order for the screen and the tests. |
 | D44 | Bad HTTP input (e.g. an unknown `status` filter, a missing field) is reported by throwing `DomainRuleException` with kind Validation; its code goes into `ErrorCodes` | One handler builds every 400/409 body, so all errors have the same shape (D27). Trade-off: the class name says "domain rule" for an input check. |
 | D45 | `Endpoints/` keeps the endpoint classes (one partial class per route group: handlers, `.Routes`, filters) and the error handler; request types go in `Endpoints/Requests/`, response types in `Endpoints/Responses/` | About 13 files expected by the end of step 4. Grouping by kind keeps a shared type such as a task response in one place; grouping by feature would not. |
+| D46 | A missing grant or task is reported by throwing `DomainRuleException` with a new kind `NotFound` (→ 404, e.g. `grant-not-found`), raised by the service that loads it | Same reason as D44: one handler builds every error body. |
+| D47 | Tasks in a grant are ordered by due date, then id | The most urgent work is at the top of the screen, in a stable order. |
