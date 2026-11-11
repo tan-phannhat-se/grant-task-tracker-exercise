@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { addTask, ApiError, type Task } from './grantsApi'
+import { addTask, ApiError, getGrants, type Task } from './grantsApi'
 
 const savedTask: Task = {
   id: 7,
@@ -10,6 +10,13 @@ const savedTask: Task = {
   completedDate: null,
   isOverdue: false,
   completedLate: false,
+}
+
+const key = '3f2b6c1e-8d4a-4f0b-9c7e-2a1d5e6f7a8b'
+const unreachable = {
+  code: 'server-unreachable',
+  field: null,
+  message: 'Cannot reach the server. Check your connection and try again.',
 }
 
 const fetchMock = vi.fn()
@@ -31,16 +38,16 @@ describe('grantsApi', () => {
   it('addTask_PostsTaskAsJson_ReturnsSavedTask', async () => {
     fetchMock.mockResolvedValue(Response.json(savedTask, { status: 201 }))
 
-    const result = await addTask(1, {
-      title: 'Check documents',
-      dueDate: '2026-11-20',
-      priority: 'High',
-    })
+    const result = await addTask(
+      1,
+      { title: 'Check documents', dueDate: '2026-11-20', priority: 'High' },
+      key,
+    )
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/grants/1/tasks')
     expect(init.method).toBe('POST')
-    expect(init.headers).toEqual({ 'Content-Type': 'application/json' })
+    expect(init.headers).toMatchObject({ 'Content-Type': 'application/json' })
     expect(JSON.parse(init.body)).toEqual({
       title: 'Check documents',
       dueDate: '2026-11-20',
@@ -68,9 +75,11 @@ describe('grantsApi', () => {
       }),
     )
 
-    const error = await addTask(1, { title: 'x', dueDate: '2020-01-01', priority: 'Low' }).catch(
-      (e: unknown) => e,
-    )
+    const error = await addTask(
+      1,
+      { title: 'x', dueDate: '2020-01-01', priority: 'Low' },
+      key,
+    ).catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({
@@ -89,9 +98,11 @@ describe('grantsApi', () => {
   it('addTask_EmptyBody400_ThrowsCheckTheFormError', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 400 }))
 
-    const error = await addTask(1, { title: 'x', dueDate: '2026-11-20', priority: 'Low' }).catch(
-      (e: unknown) => e,
-    )
+    const error = await addTask(
+      1,
+      { title: 'x', dueDate: '2026-11-20', priority: 'Low' },
+      key,
+    ).catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({
@@ -100,5 +111,59 @@ describe('grantsApi', () => {
       field: null,
       message: 'Check the form and try again.',
     })
+  })
+
+  /**
+   * KEY-1: addTask with a key → the key in the Idempotency-Key header.
+   * Catches: the key not sent, so a retried request adds the task twice.
+   */
+  it('addTask_SendsTheKeyInTheIdempotencyKeyHeader', async () => {
+    fetchMock.mockResolvedValue(Response.json(savedTask, { status: 201 }))
+
+    await addTask(1, { title: 'x', dueDate: '2026-11-20', priority: 'Low' }, key)
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.headers).toMatchObject({ 'Idempotency-Key': key })
+  })
+})
+
+describe('grantsApi when the server cannot be reached', () => {
+  /**
+   * NET-1: fetch fails (no connection, or the timeout) → ApiError server-unreachable, status 0.
+   * Catches: the browser's "Failed to fetch" shown to the officer, or the failure swallowed.
+   */
+  it('getGrants_FetchFails_ThrowsServerUnreachable', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const error = await getGrants().catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 0, ...unreachable })
+  })
+
+  /**
+   * NET-2: a proxy answers 502, 503 or 504 with an empty body → ApiError server-unreachable.
+   * Catches: a proxy that cannot reach the API shown as "Something went wrong".
+   */
+  it.each([502, 503, 504])('getGrants_ProxyAnswers%i_ThrowsServerUnreachable', async (status) => {
+    fetchMock.mockResolvedValue(new Response(null, { status }))
+
+    const error = await getGrants().catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status, ...unreachable })
+  })
+
+  /**
+   * NET-3: every request is sent with an abort signal, so it ends after a time limit.
+   * Catches: no time limit, so a request that never gets an answer leaves the screen waiting.
+   */
+  it('getGrants_IsSentWithATimeLimit', async () => {
+    fetchMock.mockResolvedValue(Response.json([]))
+
+    await getGrants()
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.signal).toBeInstanceOf(AbortSignal)
   })
 })
