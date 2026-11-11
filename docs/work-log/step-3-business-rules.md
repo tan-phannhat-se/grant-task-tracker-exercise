@@ -6,12 +6,14 @@
 - T3.2 green: BR-3 in `Grant.AddTask` (trim, then one `switch` on the length; the trimmed title is saved)
 - T3.3 red: 5 BR-2 tests
 - T3.3 green: BR-2 in `Grant.AddTask` (earliest allowed date = later of today and the application date; the message names it as `yyyy-MM-dd`)
+- T3.4 red: 4 BR-4 tests
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
 - `backend/src/GrantTracker.Api/Domain/Grant.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br3TitleTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br2DueDateTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
 
 ### Review
 | # | Check | Result |
@@ -32,6 +34,7 @@
 | 7 | T3.2 green, then `.Trim()` removed and `>` changed to `>=` on purpose | ✅ 9/9 passed · no trim → 3 red · `>=` → 2 red · restored (rerun after the `switch` rewrite) |
 | 8 | T3.3 red: BR-2 tests fail on their asserts | ✅ 3 of 5 failed (`Assert.Throws`); BR2-2 and BR2-4 (the two boundaries) pass because there is no date limit yet |
 | 9 | T3.3 green, then broken three ways on purpose | ✅ 14/14 passed · `<=` → 2 red (both boundaries) · application date ignored → 2 red · codes swapped → 3 red · restored |
+| 10 | T3.4 red | ✅ 4/4 failed on `NotImplementedException` from `Complete`; the green step's break checks will prove the asserts |
 
 **Test it yourself:**
 - [ ] `dotnet test backend` → 14 passed
