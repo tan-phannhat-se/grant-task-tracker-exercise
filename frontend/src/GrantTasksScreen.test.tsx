@@ -239,4 +239,44 @@ describe('GrantTasksScreen', () => {
     expect(screen.queryByText('Verify bank details')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument()
   })
+
+  /**
+   * NET-5: the grant list cannot be loaded (no connection)
+   * → "Cannot reach the server…" at the top of the screen.
+   * Catches: a general "Could not load" message, so the officer cannot tell the server is down.
+   */
+  it('GrantListCannotReachServer_SaysSoAtTop', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+
+    render(<GrantTasksScreen />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Cannot reach the server. Check your connection and try again.',
+    )
+  })
+
+  /**
+   * NET-6: GR-100003 cannot be loaded (the proxy answers 503)
+   * → "Cannot reach the server…" at the top of the screen.
+   * Catches: the same general message when one grant fails to load.
+   */
+  it('GrantCannotReachServer_SaysSoAtTop', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) =>
+        url === '/api/grants/3'
+          ? Promise.resolve(new Response(null, { status: 503 }))
+          : fakeApi(url, init),
+      ),
+    )
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    await screen.findByText('Verify bank details')
+
+    await user.selectOptions(screen.getByLabelText('Grant'), 'GR-100003 · Harbour Arts Collective')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Cannot reach the server. Check your connection and try again.',
+    )
+  })
 })
