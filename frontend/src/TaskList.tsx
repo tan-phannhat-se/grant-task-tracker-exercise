@@ -7,6 +7,10 @@ export interface TaskListProps {
 
 /** The grant's tasks, with overdue tasks highlighted. */
 export default function TaskList({ tasks }: TaskListProps) {
+  if (tasks.length === 0) {
+    return <p>No tasks yet.</p>
+  }
+
   return (
     <table>
       <thead>

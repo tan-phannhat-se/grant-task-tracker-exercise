@@ -7,6 +7,7 @@
 - T5.2 red: FE-1 (screen, fake `fetch` by URL; also checks the "Closed" status shows) · FE-2..4 (`TaskList` alone, no `fetch`); `GrantTasksScreen` and `TaskList` stubs render nothing
 - T5.2 green: `TaskList` (row class `overdue` + "Overdue" text label, Complete button not wired yet), `GrantTasksScreen` (loads grants, opens on the first, reloads on change; an older answer cannot replace a newer one), `App.tsx`, `index.css`
 - Tried in the browser with the real API: GR-100001 opens with "Verify bank details" highlighted; GR-100003 shows Closed; GR-100004 shows an empty table
+- FE-12 (tan asked): a grant with no tasks shows "No tasks yet."; red seen first, then green; D50 updated
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
@@ -31,10 +32,10 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
-| 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 |
+| 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
 | 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed · `./test.sh` exit 0 | ✅ 5 breaks, each red: no `/api` prefix → API-1 · POST→PUT → API-1 · `detail` ignored → API-2 · `field` dropped → API-2 · always parse JSON → API-3 |
 
-**Test cases** (14; each catches a different bug)
+**Test cases** (15; each catches a different bug)
 | # | Scenario → expected | Catches |
 |---|---------------------|---------|
 | API-1 | `addTask` → POST `/api/grants/1/tasks` with the JSON body | Wrong URL, method or body |
@@ -51,6 +52,7 @@
 | FE-9 | API 400 with `field: dueDate` → error under Due date | Field errors lost or shown in the wrong place |
 | FE-10 | API 409 `grant-closed` → error in the box at the top of the form | Errors without a field swallowed |
 | FE-11 | Task added → it is in the table, form cleared | Table not refreshed |
+| FE-12 | No tasks → "No tasks yet.", no table (added at tan's request) | A bare table header that looks like a loading error |
 
 **Missing:** T5.3–T5.6 · no test for: the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
 
@@ -60,6 +62,6 @@
 |-------|-----|--------|----------------------------------------|
 | API client (T5.1) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 3 passed | In `grantsApi.ts` change `method: 'POST'` to `'PUT'` → API-1 fails |
 | Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | 4 passed | In `TaskList.tsx` change `className={task.isOverdue ? 'overdue' : undefined}` to `className="overdue"` → FE-2 fails |
-| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …" | — |
+| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet." | — |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |
