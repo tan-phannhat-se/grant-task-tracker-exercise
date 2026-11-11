@@ -10,6 +10,7 @@
 - T3.4 green: BR-4 in `GrantTask.Complete` (records today; a repeat keeps the first date)
 - T3.5 red: 6 BR-5 tests (written by the AI; the code is tan's)
 - T3.5 green: BR-5 in `Grant.Close()`, **written by tan**; AI review found 2 bugs (closed before checking, Medium blocked) and 4 style points, all fixed by tan
+- T3.6 red: 6 BR-6 tests (7 runs) and an `IsCompletedLate` stub so they compile
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
@@ -19,6 +20,7 @@
 - `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
 - `backend/src/GrantTracker.Api/Domain/GrantTask.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br5CloseGrantTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br6OverdueTests.cs`
 
 ### Review
 | # | Check | Result |
@@ -43,6 +45,7 @@
 | 11 | T3.4 green, then broken twice on purpose | ✅ 18/18 passed · repeat guard removed → BR4-2 red · `CompletedDate = DueDate` → 4 red · restored |
 | 12 | T3.5 red: BR-5 tests | ✅ 2 of 6 failed (`Assert.Throws`): BR5-1, BR5-2. The other 4 pass as guards against blocking too much |
 | 13 | T3.5 green (tan's code), then broken three ways on purpose | ✅ 24/24 passed · close before the check → BR5-1 red · High filter removed → 3 red · completion filter removed → BR5-4 red · restored |
+| 14 | T3.6 red | ✅ 7/7 runs failed on `NotImplementedException`; the other 24 tests still pass. The green step's break checks will prove the asserts |
 
 **Test it yourself:**
 - [ ] `dotnet test backend` → 24 passed

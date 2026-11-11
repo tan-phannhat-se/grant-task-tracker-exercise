@@ -68,6 +68,11 @@ public class GrantTask
     /// </summary>
     public bool IsOverdue(DateOnly today)
     {
-        throw new NotImplementedException("T3.7");
+        throw new NotImplementedException("T3.6");
     }
+
+    /// <summary>
+    /// True when the task was completed after its due date. Not the same as overdue: a late task is done.
+    /// </summary>
+    public bool IsCompletedLate => throw new NotImplementedException("T3.6");
 }
