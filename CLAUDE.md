@@ -47,6 +47,7 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 ## Code style
 - **Format:** code must pass the format check in `./test.sh` (D19). Run `dotnet format backend/GrantTracker.sln` and `cd frontend && npm run format` before handing work over.
 - **Simple and clear first.** A newcomer must understand the code on first read: plain logic, small methods, clear names, no clever tricks.
+- Several checks on the same value use one `switch` (e.g. `case 0:` · `case > Max:`), not a chain of `if`s.
 - **Apply SOLID, but keep it simple.** Use it where it makes the code clearer, not as a checklist: no interface, layer or abstraction without a concrete reason (the brief says "don't over-engineer").
   - **S**ingle responsibility: one job per class. Domain = rules, Services = use cases, Data = storage, Endpoints = HTTP.
   - **O**pen/closed: add behaviour by adding code, not by editing unrelated code (e.g. one place maps domain errors to ProblemDetails, so a new error does not touch every endpoint).
