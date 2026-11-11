@@ -1,5 +1,11 @@
 # Work log · Step 1 · Design and scaffold · 2026-11-11
-**Done:** git repo + private GitHub remote · .NET 8 API and xUnit tests · React/Vite frontend · `test.sh` · agent setup (`CLAUDE.md`, `.claude/settings.json`, `plan.md` D1–D18, logs).
+**Done:**
+- git repo + private GitHub remote
+- .NET 8 API and xUnit tests
+- React/Vite frontend
+- `test.sh`
+- agent setup (`CLAUDE.md`, `.claude/settings.json`, `plan.md` D1–D18, logs)
+
 **Files touched:**
 - `global.json`
 - `.gitignore`
