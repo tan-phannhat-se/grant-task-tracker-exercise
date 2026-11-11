@@ -15,7 +15,8 @@ public static partial class GrantEndpoints
         GrantService grantService,
         string? status)
     {
-        var grants = await grantService.ListGrantsAsync(ParseStatusFilter(status));
+        var grants = await grantService.ListGrantsAsync(
+            GrantStatusFilter.Parse(status, whenMissing: null, field: "status"));
         return grants.Select(GrantListItemResponse.From).ToList();
     }
 

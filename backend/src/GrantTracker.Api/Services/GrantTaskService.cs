@@ -33,6 +33,26 @@ public class GrantTaskService
         return task;
     }
 
+    /// <summary>
+    /// Lists the overdue tasks of grants with the given status (every grant when null), most overdue first.
+    /// </summary>
+    public async Task<IReadOnlyList<(Grant Grant, GrantTask Task)>> ListOverdueTasksAsync(GrantStatus? grantStatus)
+    {
+        // Grants are loaded with all their tasks so the domain decides what is overdue (BR-6 stays in one place).
+        var grants = _db.Grants.Include(g => g.Tasks).AsNoTracking();
+        if (grantStatus is not null)
+        {
+            grants = grants.Where(g => g.Status == grantStatus);
+        }
+
+        var today = _calendar.Today();
+        return (await grants.ToListAsync())
+            .SelectMany(g => g.Tasks.Where(t => t.IsOverdue(today)).Select(t => (Grant: g, Task: t)))
+            .OrderBy(row => row.Task.DueDate)
+            .ThenBy(row => row.Task.Id)
+            .ToList();
+    }
+
     private static DomainRuleException TaskNotFound(int id) => new(
         ErrorCodes.TaskNotFound,
         DomainErrorKind.NotFound,

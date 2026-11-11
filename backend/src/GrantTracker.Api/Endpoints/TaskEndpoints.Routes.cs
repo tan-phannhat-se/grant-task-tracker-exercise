@@ -10,6 +10,7 @@ public static partial class TaskEndpoints
     /// </summary>
     public static void MapTaskEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/tasks/overdue", ListOverdueTasks);
         app.MapPut("/tasks/{id:int}/complete", CompleteTask);
     }
 }
