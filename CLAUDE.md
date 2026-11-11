@@ -63,6 +63,7 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 
 ## Tests
 - xUnit, Arrange / Act / Assert, names like `AddTask_DueDateYesterday_IsRejected`.
+- Each test has a summary: case id, scenario → expected result, and a "Catches:" line (the bug it catches).
 - Fixed dates only (e.g. `new DateOnly(2026, 11, 11)` or `FakeTimeProvider`). Tests must not depend on the real date or on run order.
 - Each test must catch a different bug. Before adding a test, say which bug it catches.
 - Prove a new test can fail: break the code on purpose, watch it go red, restore.
