@@ -15,4 +15,13 @@ public static partial class GrantEndpoints
         var grants = await grantService.ListGrantsAsync(ParseStatusFilter(status));
         return grants.Select(GrantListItemResponse.From).ToList();
     }
+
+    private static async Task<GrantDetailResponse> GetGrant(
+        int id,
+        GrantService grantService,
+        ConfiguredTimeZoneCalendar calendar)
+    {
+        var grant = await grantService.GetGrantAsync(id);
+        return GrantDetailResponse.From(grant, calendar.Today());
+    }
 }

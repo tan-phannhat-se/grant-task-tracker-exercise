@@ -11,5 +11,6 @@ public static partial class GrantEndpoints
     public static void MapGrantEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/grants", ListGrants);
+        app.MapGet("/grants/{id:int}", GetGrant);
     }
 }

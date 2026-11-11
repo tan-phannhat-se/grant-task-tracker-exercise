@@ -33,4 +33,20 @@ public class GrantService
 
         return await grants.OrderBy(g => g.ReferenceNumber).ToListAsync();
     }
+
+    /// <summary>
+    /// Loads one grant with its tasks, or reports grant-not-found.
+    /// </summary>
+    public async Task<Grant> GetGrantAsync(int id)
+    {
+        var grant = await _db.Grants
+            .Include(g => g.Tasks)
+            .AsNoTracking()
+            .SingleOrDefaultAsync(g => g.Id == id);
+
+        return grant ?? throw new DomainRuleException(
+            ErrorCodes.GrantNotFound,
+            DomainErrorKind.NotFound,
+            $"Grant {id} was not found.");
+    }
 }
