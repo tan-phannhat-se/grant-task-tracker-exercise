@@ -84,6 +84,8 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
   - No decision numbers (Dxx) or OP numbers in code; traceability lives in `docs/`.
   - Explain why, never repeat what the code says. No `<param>` blocks.
   - One type per file.
+    - Frontend exception: a component's props interface stays in the component's file;
+      the API's types stay together in `src/api/grantsApi.ts` (D54).
 - **Line length:** at most 120 characters in C# (checked by `./test.sh`), 100 in the frontend (Prettier).
 
 ## Tests
