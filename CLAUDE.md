@@ -10,7 +10,7 @@ A take-home exercise: a small tool for grants officers to see grants, add tasks,
 | File | Holds |
 |------|-------|
 | `docs/plan.md` | Scope, roles, steps, decisions (D1, D2…) |
-| `docs/ai-work-log.md` | The AI's Build / Review / Test log for each step |
+| `docs/work-log/step-N-*.md` | The AI's Build / Review / Test log, one file per step |
 | `docs/ai-log.md` | AI mistakes and how we prevent them |
 | `docs/prompts.md` | A few key prompts from tan |
 
@@ -82,7 +82,10 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 4. **Undecided choice** (not in `docs/plan.md`) → stop and ask. Never decide alone.
 5. **Review**: re-read the whole diff against `docs/plan.md` and this file; look for bugs, missed edge cases, over-building and rule breaks. Fix what is found.
 6. **Test**: run `./test.sh` plus any check that proves the change works (e.g. start the API and call it). New tests: see "Tests".
-7. **Log**: record the step in `docs/ai-work-log.md` using the format at the top of that file, including the files touched. tan reviews this log.
+7. **Log**: record the step in its own file `docs/work-log/step-N-*.md`, including the files touched. tan reviews it. Format:
+   - Done · Files touched (one per line) · Review (checklist, missing, how to review) · Test (checklist, missing, how to test).
+   - Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narrow.
+   - Limits: one entry per step (update it while the step runs) · about 40 lines · tables up to 8 rows, 🔧 and ⏳ first · files by folder · up to 4 self-check items.
 8. **Ask**: one or two "why" questions to tan about the change.
 9. **Stop** and wait for tan's `go` before the next step. tan reviews and commits.
 
