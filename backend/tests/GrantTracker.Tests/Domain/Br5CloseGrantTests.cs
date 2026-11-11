@@ -92,7 +92,7 @@ public class Br5CloseGrantTests
 
     /// <summary>
     /// BR5-6: closing an already closed grant raises no error and it stays Closed.
-    /// Catches: an error on a repeat (D13).
+    /// Catches: an error on a repeat.
     /// </summary>
     [Fact]
     public void Close_AlreadyClosed_StaysClosedWithoutError()

@@ -5,7 +5,7 @@ namespace GrantTracker.Tests.Domain;
 
 /// <summary>
 /// BR-6: a task is overdue when it is not completed and its due date is before today.
-/// Also covers "completed late" (D26), which is a different idea from overdue.
+/// Also covers "completed late", which is a different idea from overdue.
 /// </summary>
 public class Br6OverdueTests
 {
@@ -65,7 +65,7 @@ public class Br6OverdueTests
 
     /// <summary>
     /// BR6-5: a task due 10 Nov and completed on 11 Nov is completed late, and is not overdue.
-    /// Catches: "completed late" and "overdue" mixed up (D26).
+    /// Catches: "completed late" and "overdue" mixed up.
     /// </summary>
     [Fact]
     public void IsCompletedLate_CompletedAfterDueDate_IsTrueAndNotOverdue()

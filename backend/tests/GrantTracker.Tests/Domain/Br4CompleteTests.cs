@@ -55,7 +55,7 @@ public class Br4CompleteTests
 
     /// <summary>
     /// BR4-4: a Low-priority task on a closed grant can still be completed.
-    /// Catches: nothing yet, because a task does not know its grant; it guards D24 if that link is added later.
+    /// Catches: nothing yet, because a task does not know its grant; it guards this rule if that link is added.
     /// </summary>
     [Fact]
     public void Complete_TaskOnClosedGrant_IsAllowed()
