@@ -64,6 +64,21 @@ public class GrantService
         return task;
     }
 
+    /// <summary>
+    /// Closes a grant unless a High-priority task is pending; closing a closed grant changes nothing.
+    /// </summary>
+    public async Task<Grant> CloseGrantAsync(int id)
+    {
+        // Tasks must be loaded: without them BR-5 would see no pending High task and let the close through.
+        var grant = await _db.Grants
+            .Include(g => g.Tasks)
+            .SingleOrDefaultAsync(g => g.Id == id) ?? throw GrantNotFound(id);
+
+        grant.Close();
+        await _db.SaveChangesAsync();
+        return grant;
+    }
+
     private static DomainRuleException GrantNotFound(int id) => new(
         ErrorCodes.GrantNotFound,
         DomainErrorKind.NotFound,

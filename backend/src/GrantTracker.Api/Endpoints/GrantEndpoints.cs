@@ -28,6 +28,15 @@ public static partial class GrantEndpoints
         return GrantDetailResponse.From(grant, calendar.Today());
     }
 
+    private static async Task<GrantDetailResponse> CloseGrant(
+        int id,
+        GrantService grantService,
+        ConfiguredTimeZoneCalendar calendar)
+    {
+        var grant = await grantService.CloseGrantAsync(id);
+        return GrantDetailResponse.From(grant, calendar.Today());
+    }
+
     private static async Task<Created<TaskResponse>> AddTask(
         int id,
         AddTaskRequest request,
