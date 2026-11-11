@@ -12,10 +12,12 @@
 - T5.3 green: Complete calls the API and puts the returned task in its row; D51 extended (tan chose: errors outside the form go in the box at the top of the screen)
 - FE-13 (needed by that choice): test written, seen red (error swallowed), then `catch` added; `loadError` renamed `screenError`
 - Tried in the browser: Complete on "Verify bank details" → "Completed on 2026-11-11" + "Completed late", highlight gone (the server's today is UTC, the default time zone)
+- T5.4 red: FE-6 (2 inputs), FE-7a, FE-7b (100 characters with spaces around, so it also catches "counted before trimming"), FE-8; `AddTaskForm` stub renders nothing. Checked first that `user.type` fills a date input in jsdom (throwaway test, deleted)
+- D51's extension was committed inside step 6's commit `768362f` (shared `plan.md`)
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
-- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3)
+- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4)
 - `docs/plan.md` (D50: opens on the first grant)
 - `docs/plan.md` (Step 5 task table, D50–D54) · `docs/work-log/step-5-frontend.md`
 
@@ -37,6 +39,7 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
+| 4 | T5.4 | ✅ 5 failed (no form: no Title or Due date label) | ⏳ | ⏳ |
 | 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) · FE-13: 1 failed (no alert, unhandled rejection) | ✅ 10 passed · frontend checks green; `./test.sh` red only on step 6's red backend tests (`HealthCheckTests`, `AddTaskRetryTests`) | ✅ 5 breaks, each red: button calls nothing → FE-5, FE-13 · wrong id sent → FE-13 · screen uses its own today → FE-5 · row not replaced → FE-5 · API message ignored → FE-13 |
 | 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
 | 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed · `./test.sh` exit 0 | ✅ 5 breaks, each red: no `/api` prefix → API-1 · POST→PUT → API-1 · `detail` ignored → API-2 · `field` dropped → API-2 · always parse JSON → API-3 |
@@ -53,7 +56,7 @@
 | FE-4 | `completedLate` → "Completed late" label | Label missing, or on the wrong task |
 | FE-5 | Click Complete → PUT; row shows the date from the response | Screen uses its own "today" |
 | FE-6 | Title empty or spaces → error, no request | Check missing, or not trimmed |
-| FE-7 | Title 101 characters → error; 100 → sent | Length check missing · `>=` instead of `>` |
+| FE-7 | Title 101 characters → error (7a); 100 with spaces around → sent trimmed (7b) | Length check missing · `>=` instead of `>` · counted before trimming |
 | FE-8 | No due date → error, no request | Date check missing |
 | FE-9 | API 400 with `field: dueDate` → error under Due date | Field errors lost or shown in the wrong place |
 | FE-10 | API 409 `grant-closed` → error in the box at the top of the form | Errors without a field swallowed |
@@ -71,5 +74,6 @@
 | Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | 4 passed | In `TaskList.tsx` change `className={task.isOverdue ? 'overdue' : undefined}` to `className="overdue"` → FE-2 fails |
 | In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late" | — |
 | Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 3 passed | In `TaskList.tsx` change `onComplete(task.id)` to `onComplete(task.grantId)` → FE-13 fails |
+| Form checks (T5.4) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | Now (red): 5 failed · after green: 5 passed | ⏳ written at green |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |
