@@ -7,6 +7,9 @@ namespace GrantTracker.Api.Domain;
 /// </summary>
 public class Grant
 {
+    public const int ReferenceNumberMaxLength = 9; // "GR-" + 6 digits
+    public const int OrganisationNameMaxLength = 200; // Australian Business Register limit (ABR data dictionary 9.9.7)
+
     private readonly List<GrantTask> _tasks = new();
 
     public int Id { get; private set; }

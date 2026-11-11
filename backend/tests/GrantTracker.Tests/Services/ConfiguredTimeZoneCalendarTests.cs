@@ -8,11 +8,12 @@ namespace GrantTracker.Tests.Services;
 /// </summary>
 public class ConfiguredTimeZoneCalendarTests
 {
-    // 11 Nov 23:30 in UTC is already 12 Nov 10:30 in Sydney (UTC+11 in November).
-    private static readonly DateTimeOffset LateEveningUtc = new(2026, 11, 11, 23, 30, 0, TimeSpan.Zero);
+    // 15 Jan 23:30 in UTC is already 16 Jan 10:30 in Sydney (UTC+11 in summer).
+    // A past date, so a calendar that reads the real clock can never return the expected day.
+    private static readonly DateTimeOffset LateEveningUtc = new(2020, 1, 15, 23, 30, 0, TimeSpan.Zero);
 
     /// <summary>
-    /// CL-1: with UTC configured, 2026-11-11 23:30Z → today is 11 Nov.
+    /// CL-1: with UTC configured, 2020-01-15 23:30Z → today is 15 Jan.
     /// Catches: the real clock used instead of the injected one, or a fixed time zone ignoring the setting.
     /// </summary>
     [Fact]
@@ -22,11 +23,11 @@ public class ConfiguredTimeZoneCalendarTests
 
         var today = calendar.Today();
 
-        Assert.Equal(new DateOnly(2026, 11, 11), today);
+        Assert.Equal(new DateOnly(2020, 1, 15), today);
     }
 
     /// <summary>
-    /// CL-2: with Australia/Sydney configured, the same instant → today is 12 Nov.
+    /// CL-2: with Australia/Sydney configured, the same instant → today is 16 Jan.
     /// Catches: the configured time zone ignored, so the UTC date is returned.
     /// </summary>
     [Fact]
@@ -37,6 +38,6 @@ public class ConfiguredTimeZoneCalendarTests
 
         var today = calendar.Today();
 
-        Assert.Equal(new DateOnly(2026, 11, 12), today);
+        Assert.Equal(new DateOnly(2020, 1, 16), today);
     }
 }

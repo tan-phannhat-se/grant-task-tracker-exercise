@@ -6,6 +6,7 @@ namespace GrantTracker.Api.Domain;
 public class GrantTask
 {
     public const int TitleMaxLength = 100; // BR-3
+    public const int IdempotencyKeyLength = 36; // a UUID in its text form
 
     public int Id { get; private set; }
     public int GrantId { get; private set; }
