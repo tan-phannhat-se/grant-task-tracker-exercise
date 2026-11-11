@@ -4,9 +4,11 @@
 - Real responses checked with `curl` before writing the client: shapes match D35; the empty-body 400 has no `Content-Type`
 - T5.1 red: API-1..3; `grantsApi.ts` stub throws
 - T5.1 green: `send` (one place for fetch and errors), `toApiError` (reads the body only when it is ProblemDetails), four calls; D50 adds "opens on the first grant" (tan chose)
+- T5.2 red: FE-1 (screen, fake `fetch` by URL; also checks the "Closed" status shows) · FE-2..4 (`TaskList` alone, no `fetch`); `GrantTasksScreen` and `TaskList` stubs render nothing
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
+- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` (T5.2)
 - `docs/plan.md` (Step 5 task table, D50–D54) · `docs/work-log/step-5-frontend.md`
 
 ### Review
@@ -24,6 +26,7 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
+| 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ⏳ | ⏳ |
 | 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed · `./test.sh` exit 0 | ✅ 5 breaks, each red: no `/api` prefix → API-1 · POST→PUT → API-1 · `detail` ignored → API-2 · `field` dropped → API-2 · always parse JSON → API-3 |
 
 **Test cases** (14; each catches a different bug)
@@ -51,5 +54,6 @@
 | Group | Run | Expect | Break on purpose → expect (then undo) |
 |-------|-----|--------|----------------------------------------|
 | API client (T5.1) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 3 passed | In `grantsApi.ts` change `method: 'POST'` to `'PUT'` → API-1 fails |
+| Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | Now (red): 4 failed · after green: 4 passed | ⏳ written at green |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |
