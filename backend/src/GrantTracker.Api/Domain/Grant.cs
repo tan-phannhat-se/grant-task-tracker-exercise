@@ -3,7 +3,7 @@ using System.Globalization;
 namespace GrantTracker.Api.Domain;
 
 /// <summary>
-/// A grant and its tasks. Every rule lives here and takes "today" as input, so it can be tested.
+/// A grant and its tasks. BR-1, BR-2, BR-3 and BR-5 live here; BR-4 and BR-6 live in GrantTask.
 /// </summary>
 public class Grant
 {
@@ -14,7 +14,8 @@ public class Grant
     public string OrganisationName { get; private set; } = string.Empty;
     public DateOnly ApplicationDate { get; private set; }
     public GrantStatus Status { get; private set; }
-    public IReadOnlyCollection<GrantTask> Tasks => _tasks;
+    // A read-only wrapper: callers cannot cast it back to List and add tasks without the rules.
+    public IReadOnlyCollection<GrantTask> Tasks => _tasks.AsReadOnly();
 
     private Grant() { } // for EF Core
 
