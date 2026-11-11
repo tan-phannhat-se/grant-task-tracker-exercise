@@ -81,12 +81,13 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 2. **Tests first.** tan approves the test case list; then the AI writes code until the tests pass.
 3. **Build** one step at a time. Touch only the files in the plan; anything else → stop and ask.
 4. **Undecided choice** (not in `docs/plan.md`) → stop and ask. Never decide alone.
+   If following one rule means breaking another or leaving something out, stop and ask tan. Never resolve the conflict alone.
 5. **Review**: re-read the whole diff against `docs/plan.md` and this file; look for bugs, missed edge cases, over-building and rule breaks. Fix what is found.
 6. **Test**: run `./test.sh` plus any check that proves the change works (e.g. start the API and call it). New tests: see "Tests".
 7. **Log**: record the step in its own file `docs/work-log/step-N-*.md`, including the files touched. tan reviews it. Format:
    - Done (one item per line) · Files touched (one per line) · Review (checklist, missing, how to review) · Test (checklist, missing, how to test).
    - Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narrow.
-   - Limits: one entry per step (update it while the step runs) · about 40 lines · tables up to 8 rows, 🔧 and ⏳ first · files by folder · up to 4 self-check items.
+   - Limits: one entry per step (update it while the step runs) · about 40 lines · tables up to 8 rows, 🔧 and ⏳ first · files by folder · self-checks: one row per rule or task, never dropped to save space.
 8. **Ask**: one or two "why" questions to tan about the change.
 9. **Stop** and wait for tan's `go` before the next step. tan reviews and commits.
 
