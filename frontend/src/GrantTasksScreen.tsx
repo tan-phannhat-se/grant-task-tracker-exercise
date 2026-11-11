@@ -69,7 +69,7 @@ export default function GrantTasksScreen() {
           <p>
             Status: <span className="label">{grant.status}</span> · Applied {grant.applicationDate}
           </p>
-          <TaskList tasks={grant.tasks} />
+          <TaskList tasks={grant.tasks} onComplete={() => {}} />
         </section>
       )}
     </main>

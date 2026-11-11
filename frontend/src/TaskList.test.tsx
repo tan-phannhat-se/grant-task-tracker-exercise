@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { Task } from './api/grantsApi'
 import TaskList from './TaskList'
 
+const noop = () => {}
+
 /** A pending task due in the future; each test changes only what it is about. */
 function task(overrides: Partial<Task>): Task {
   return {
@@ -28,7 +30,7 @@ describe('TaskList', () => {
    * Catches: an empty grant shows a bare table header, which looks like a loading error.
    */
   it('NoTasks_ShowsNoTasksYet', () => {
-    render(<TaskList tasks={[]} />)
+    render(<TaskList tasks={[]} onComplete={noop} />)
 
     expect(screen.getByText('No tasks yet.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
@@ -44,7 +46,7 @@ describe('TaskList', () => {
       task({ id: 2, title: 'Request quote', dueDate: '2026-11-16' }),
     ]
 
-    render(<TaskList tasks={tasks} />)
+    render(<TaskList tasks={tasks} onComplete={noop} />)
 
     expect(rowOf('Verify bank details')).toHaveClass('overdue')
     expect(within(rowOf('Verify bank details')).getByText('Overdue')).toBeInTheDocument()
@@ -67,7 +69,7 @@ describe('TaskList', () => {
       }),
     ]
 
-    render(<TaskList tasks={tasks} />)
+    render(<TaskList tasks={tasks} onComplete={noop} />)
 
     expect(within(rowOf('Request quote')).getByRole('button', { name: 'Complete' })).toBeEnabled()
     const completedRow = rowOf('Check eligibility')
@@ -91,7 +93,7 @@ describe('TaskList', () => {
       task({ id: 2, title: 'On time', dueDate: '2026-09-22', completedDate: '2026-09-22' }),
     ]
 
-    render(<TaskList tasks={tasks} />)
+    render(<TaskList tasks={tasks} onComplete={noop} />)
 
     expect(within(rowOf('Late one')).getByText('Completed late')).toBeInTheDocument()
     expect(within(rowOf('On time')).queryByText('Completed late')).not.toBeInTheDocument()

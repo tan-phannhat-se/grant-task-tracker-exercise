@@ -3,6 +3,7 @@ import type { Task } from './api/grantsApi'
 /** What the task table needs: the grant's tasks, most urgent first. */
 export interface TaskListProps {
   tasks: Task[]
+  onComplete: (taskId: number) => void
 }
 
 /** The grant's tasks, with overdue tasks highlighted. */
