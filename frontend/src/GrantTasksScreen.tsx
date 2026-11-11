@@ -27,7 +27,7 @@ export default function GrantTasksScreen() {
         setGrants(list)
         setSelectedGrantId(list[0]?.id ?? null) // opens on the first grant
       })
-      .catch(() => setScreenError(loadErrorMessage))
+      .catch((error: unknown) => setScreenError(messageFor(error, loadErrorMessage)))
   }, [])
 
   useEffect(() => {
@@ -43,9 +43,9 @@ export default function GrantTasksScreen() {
           setScreenError(null) // the grant loaded, so an older error no longer applies
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (isLatest) {
-          setScreenError(loadErrorMessage)
+          setScreenError(messageFor(error, loadErrorMessage))
         }
       })
     return () => {
@@ -66,7 +66,7 @@ export default function GrantTasksScreen() {
         setGrant(detail)
         setScreenError(null)
       })
-      .catch(() => setScreenError(loadErrorMessage))
+      .catch((error: unknown) => setScreenError(messageFor(error, loadErrorMessage)))
   }
 
   /** Completes a task and shows it as the API returns it, so a repeat keeps the first date. */
@@ -83,7 +83,7 @@ export default function GrantTasksScreen() {
         })
       })
       .catch((error: unknown) => {
-        setScreenError(error instanceof ApiError ? error.message : completeErrorMessage)
+        setScreenError(messageFor(error, completeErrorMessage))
       })
   }
 
@@ -121,4 +121,12 @@ export default function GrantTasksScreen() {
       )}
     </main>
   )
+}
+
+/**
+ * The API client's message (e.g. "Cannot reach the server…") when there is one,
+ * otherwise a general one.
+ */
+function messageFor(error: unknown, generalMessage: string): string {
+  return error instanceof ApiError ? error.message : generalMessage
 }
