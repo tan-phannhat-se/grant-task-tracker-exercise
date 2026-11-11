@@ -24,6 +24,17 @@ function rowOf(title: string) {
 
 describe('TaskList', () => {
   /**
+   * FE-12: a grant with no tasks → "No tasks yet" instead of an empty table.
+   * Catches: an empty grant shows a bare table header, which looks like a loading error.
+   */
+  it('NoTasks_ShowsNoTasksYet', () => {
+    render(<TaskList tasks={[]} />)
+
+    expect(screen.getByText('No tasks yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  /**
    * FE-2: an overdue task → highlighted row with an "Overdue" label; a task not overdue → neither.
    * Catches: the highlight missing, or put on every task.
    */
