@@ -42,6 +42,14 @@
 | 6 | T3.6 BR-6 | ✅ Overdue and completed late computed, never stored |
 | 7 | T3.7 independent review | 🔧 `Tasks` returned the real list → `AsReadOnly()`; `Grant` summary named every rule → fixed; B1–B3 decided by tan (D30–D32) |
 
+**Missing:** none recorded when this log was written (line added on 2026-11-12 so every log has every part).
+
+**Review it yourself:**
+- [ ] `Grant.AddTask`: checks run BR-1 → BR-3 → BR-2 → priority (D20, D30)
+- [ ] `GrantTask.cs`: `Complete` keeps the first date (BR-4); `IsOverdue` and `IsCompletedLate` are computed, never stored
+- [ ] Each test file: one test per case in `plan.md`, each with a "Catches" line
+- [ ] `Grant.Close()` (your BR-5): you can explain every line
+
 ### Test
 | # | Task | Red | Green | Break on purpose → result (all restored) |
 |---|------|-----|-------|------------------------------------------|

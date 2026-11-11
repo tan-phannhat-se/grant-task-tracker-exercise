@@ -15,6 +15,7 @@ A take-home exercise: a small tool for grants officers to see grants, add tasks,
 |------|-------|
 | `docs/plan.md` | Scope, roles, steps, decisions (D1, D2…) |
 | `docs/work-log/step-N-*.md` | The AI's Build / Review / Test log, one file per step |
+| `docs/work-log/TEMPLATE.md` | Every part a step log must have; copied at the start of a step |
 | `docs/ai-log.md` | AI mistakes and how we prevent them |
 | `docs/prompts.md` | A few key prompts from tan |
 
@@ -36,6 +37,8 @@ backend/src/GrantTracker.Api/
   Endpoints/  HTTP mapping only: request/response types, status codes, ProblemDetails.
 backend/tests/GrantTracker.Tests/
   Domain/     unit tests of the rules (no database)
+  Services/   unit tests of services that need no database (e.g. today in the configured time zone)
+  Data/       EF Core mapping against SQLite in-memory: fields, unique indexes, delete behaviour
   Api/        integration tests: WebApplicationFactory + SQLite in-memory + FakeTimeProvider
 frontend/src/  one screen; API client in one typed module
 ```
@@ -121,9 +124,8 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 6. **Test**: run `./test.sh` plus any check that proves the change works (e.g. start the API and call it).
    - New tests: see "Tests".
 7. **Log**: record the step in its own file `docs/work-log/step-N-*.md`, including the files touched.
-   tan reviews it. Format:
-   - Done (one item per line) · Files touched (one per line)
-     · Review (checklist, missing, how to review) · Test (checklist, missing, how to test).
+   tan reviews it.
+   - Start it by copying `docs/work-log/TEMPLATE.md`; keep every part.
    - Marks: ✅ pass · 🔧 found and fixed · ⏳ not yet. Guides go broad → narrow.
    - Limits:
      - one entry per step (update it while the step runs) · about 40 lines

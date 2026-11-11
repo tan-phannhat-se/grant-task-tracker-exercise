@@ -29,6 +29,8 @@
 | 5 | Tasks only created through `Grant.AddTask` | ✅ `GrantTask` constructor is `internal` |
 | 6 | `Field` on the exception and one `ErrorCodes` list | ✅ tan kept `Field` (now part of D27) |
 
+**Missing:** none recorded when this log was written (line added on 2026-11-12 so every log has every part).
+
 **Review it yourself:**
 - [ ] `Grant.cs`, `GrantTask.cs`: signatures match how you think about the rules
 - [ ] `DomainRuleException.cs`: `Code`, `Kind`, `Field` (D27)
