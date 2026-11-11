@@ -134,6 +134,23 @@ Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing
 
 T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because all three change `Grant.AddTask`. T3.4 and T3.6 only touch `GrantTask.cs` and their own test files.
 
+### Step 4 · API
+Each endpoint is one task, done test-first like step 3: a red commit with its integration tests, then a green commit. tan approves each endpoint's test case list first.
+
+| Task | Work | Code by | Files |
+|------|------|---------|-------|
+| T4.1 | DbContext and EF configuration (D36–D38); database created on start (D18); "today" from the configured time zone (D15) | AI | `Data/` · `Services/` · `Program.cs` |
+| T4.2 | Seed data (D33), with a test that it matches the brief's table | AI | `Data/` · `tests/Api/` |
+| T4.3 | API foundation: services, enums as strings, domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
+| T4.4 | `GET /grants` (status filter, pending task count) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
+| T4.5 | `GET /grants/{id}` | AI | same |
+| T4.6 | `POST /grants/{id}/tasks` (201; missing fields handled at the boundary, D23) | AI | same |
+| T4.7 | `PUT /tasks/{id}/complete` | AI | same |
+| T4.8 | `PUT /grants/{id}/close` (loads the grant with its tasks) | AI | same |
+| T4.9 | `GET /tasks/overdue` (filter D14, most overdue first, `daysOverdue`) | AI | same |
+
+The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3).
+
 **Test notes for later steps**
 - Step 4 (API): `POST` a task to GR-100003 (closed in the seed) → 409 with `code: grant-closed`.
 - Step 4 (API): `POST` a task with no `title` in the JSON → 400 `title-required` (null is handled at the API boundary, D23).
@@ -178,6 +195,9 @@ T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because al
 | D30 | `AddTask` refuses a priority that is not Low, Medium or High: 400 `priority-invalid` on `priority`, checked after BR-2 | An undefined value would never count as High and could slip past BR-5. Keeps D5's promise that a missing priority is caught. |
 | D31 | After trimming (D22), the title length is counted with `string.Length` (UTF-16 units), the same way an HTML `maxlength` counts | The screen and the API agree on the limit. An emoji counts as 2; titles are plain text, so this is accepted. |
 | D32 | A property that carries a design decision may have a `/// <summary>` explaining it (e.g. `CompletedDate`, `IdempotencyKey`) | Those reasons are likely interview questions and show on hover. Other properties keep a short `//` only when needed. |
-
-## Open questions
-Decide in step 4: column lengths, indexes, cascade delete, seeding approach.
+| D33 | Seed data replays history through the domain: each task is added with "today" = its grant's application date; tasks marked Completed are completed on their due date; GR-100003's tasks are added and completed before the grant is closed | Even sample data obeys every rule, and the domain needs no back door. The brief gives no completion dates, so "on the due date" is an assumption for the README. |
+| D34 | Routes exactly as in the brief | Reviewers recognise them at once; nothing to defend. |
+| D35 | Responses: a task has id, grantId, title, dueDate, priority, completedDate, isOverdue (computed by the server), completedLate · grant list adds pendingTaskCount, grant detail adds tasks · POST a task → 201 without Location (no GET /tasks/{id} in the brief); a retry with the same key → 200 · complete → 200 · close → 200 with the grant · overdue rows add referenceNumber, organisationName, daysOverdue · dates as yyyy-MM-dd, enums by name · errors as ProblemDetails with `code` and `field` | The screen gets what it shows without computing rules itself; the officer's clock cannot change what is overdue. |
+| D36 | Column lengths: Title 100 (BR-3, same constant as the domain) · IdempotencyKey 36 (a UUID; the API accepts only UUIDs) · ReferenceNumber 9 (`GR-` + 6 digits as in the brief; widen with a migration if needed) · OrganisationName 200 (the Australian Business Register limit, ABR data dictionary 9.9.7) | Every length has a source; none is padding. |
+| D37 | Indexes: ReferenceNumber unique · IdempotencyKey unique where not null · GrantId · DueDate | Unique reference; one task per retried request even under concurrency; fast task loading per grant; fast overdue list (OP-6). |
+| D38 | Deleting a grant that still has tasks is restricted, not cascaded | The brief has no delete and ends a grant by closing it; support and reporting need history (OP-4, OP-6), so tasks are never lost silently. |
