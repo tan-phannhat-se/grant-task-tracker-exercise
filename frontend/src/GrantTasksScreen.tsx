@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react'
-import { getGrant, getGrants, type GrantDetail, type GrantListItem } from './api/grantsApi'
+import {
+  ApiError,
+  completeTask,
+  getGrant,
+  getGrants,
+  type GrantDetail,
+  type GrantListItem,
+} from './api/grantsApi'
 import TaskList from './TaskList'
 
 const loadErrorMessage = 'Could not load the grants. Please try again.'
+const completeErrorMessage = 'Could not complete the task. Please try again.'
 
 /** The one screen: choose a grant, see and work on its tasks. */
 export default function GrantTasksScreen() {
   const [grants, setGrants] = useState<GrantListItem[]>([])
   const [selectedGrantId, setSelectedGrantId] = useState<number | null>(null)
   const [grant, setGrant] = useState<GrantDetail | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  // An error that does not belong to the Add task form, shown at the top of the screen
+  const [screenError, setScreenError] = useState<string | null>(null)
 
   useEffect(() => {
     getGrants()
@@ -17,7 +26,7 @@ export default function GrantTasksScreen() {
         setGrants(list)
         setSelectedGrantId(list[0]?.id ?? null) // opens on the first grant
       })
-      .catch(() => setLoadError(loadErrorMessage))
+      .catch(() => setScreenError(loadErrorMessage))
   }, [])
 
   useEffect(() => {
@@ -34,7 +43,7 @@ export default function GrantTasksScreen() {
       })
       .catch(() => {
         if (isLatest) {
-          setLoadError(loadErrorMessage)
+          setScreenError(loadErrorMessage)
         }
       })
     return () => {
@@ -42,12 +51,30 @@ export default function GrantTasksScreen() {
     }
   }, [selectedGrantId])
 
+  /** Completes a task and shows it as the API returns it, so a repeat keeps the first date. */
+  function handleComplete(taskId: number) {
+    setScreenError(null)
+    completeTask(taskId)
+      .then((updated) => {
+        setGrant((current) => {
+          if (current === null) {
+            return null
+          }
+          const tasks = current.tasks.map((task) => (task.id === updated.id ? updated : task))
+          return { ...current, tasks }
+        })
+      })
+      .catch((error: unknown) => {
+        setScreenError(error instanceof ApiError ? error.message : completeErrorMessage)
+      })
+  }
+
   return (
     <main>
       <h1>Grant tasks</h1>
-      {loadError && (
+      {screenError && (
         <p role="alert" className="error">
-          {loadError}
+          {screenError}
         </p>
       )}
 
@@ -69,7 +96,7 @@ export default function GrantTasksScreen() {
           <p>
             Status: <span className="label">{grant.status}</span> · Applied {grant.applicationDate}
           </p>
-          <TaskList tasks={grant.tasks} onComplete={() => {}} />
+          <TaskList tasks={grant.tasks} onComplete={handleComplete} />
         </section>
       )}
     </main>

@@ -9,6 +9,9 @@
 - Tried in the browser with the real API: GR-100001 opens with "Verify bank details" highlighted; GR-100003 shows Closed; GR-100004 shows an empty table
 - FE-12 (tan asked): a grant with no tasks shows "No tasks yet."; red seen first, then green; D50 updated
 - T5.3 red: FE-5 (fake API answers PUT with a completed date long past); `TaskList` gets an `onComplete` prop, the screen passes a stub that does nothing
+- T5.3 green: Complete calls the API and puts the returned task in its row; D51 extended (tan chose: errors outside the form go in the box at the top of the screen)
+- FE-13 (needed by that choice): test written, seen red (error swallowed), then `catch` added; `loadError` renamed `screenError`
+- Tried in the browser: Complete on "Verify bank details" → "Completed on 2026-11-11" + "Completed late", highlight gone (the server's today is UTC, the default time zone)
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
@@ -19,10 +22,11 @@
 ### Review
 | # | Task | Result |
 |---|------|--------|
+| 3 | T5.3 | ✅ no short-circuit tricks (`if` blocks) · `screenError` named for what it holds now |
 | 2 | T5.2 | 🔧 `isLatest && setGrant(...)` rewritten as a plain `if` ("no clever tricks") · ✅ no new package, no state library |
 | 1 | T5.1 | ✅ diff re-read against D35, D49, D51, D54: no extra calls (close and overdue not used by this screen) |
 
-**Missing:** T5.3 green–T5.6
+**Missing:** T5.4–T5.6
 
 **Review it yourself:**
 1. `docs/plan.md` D50–D54: do they say what you chose?
@@ -33,11 +37,11 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
-| 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) | ⏳ | ⏳ |
+| 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) · FE-13: 1 failed (no alert, unhandled rejection) | ✅ 10 passed · frontend checks green; `./test.sh` red only on step 6's red backend tests (`HealthCheckTests`, `AddTaskRetryTests`) | ✅ 5 breaks, each red: button calls nothing → FE-5, FE-13 · wrong id sent → FE-13 · screen uses its own today → FE-5 · row not replaced → FE-5 · API message ignored → FE-13 |
 | 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
 | 1 | T5.1 | ✅ 3 failed (`Not implemented`) | ✅ 3 passed · `./test.sh` exit 0 | ✅ 5 breaks, each red: no `/api` prefix → API-1 · POST→PUT → API-1 · `detail` ignored → API-2 · `field` dropped → API-2 · always parse JSON → API-3 |
 
-**Test cases** (15; each catches a different bug)
+**Test cases** (16; each catches a different bug)
 | # | Scenario → expected | Catches |
 |---|---------------------|---------|
 | API-1 | `addTask` → POST `/api/grants/1/tasks` with the JSON body | Wrong URL, method or body |
@@ -54,9 +58,10 @@
 | FE-9 | API 400 with `field: dueDate` → error under Due date | Field errors lost or shown in the wrong place |
 | FE-10 | API 409 `grant-closed` → error in the box at the top of the form | Errors without a field swallowed |
 | FE-11 | Task added → it is in the table, form cleared | Table not refreshed |
+| FE-13 | Complete fails (404 `task-not-found`) → the API's message at the top of the screen (added with D51) | A failed Complete swallowed |
 | FE-12 | No tasks → "No tasks yet.", no table (added at tan's request) | A bare table header that looks like a loading error |
 
-**Missing:** T5.3 green–T5.6 · no test for: the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
+**Missing:** T5.4–T5.6 · no test for: clearing an old error when Complete is clicked again ·  the `isLatest` guard (switching grants faster than the API answers), the load error message (step 6 tests the unreachable server) · the "Something went wrong" message (an error that is not ProblemDetails and not a 400) has no test yet; the unreachable-server case is OP-3 in step 6
 
 **Test it yourself:**
 
@@ -64,7 +69,7 @@
 |-------|-----|--------|----------------------------------------|
 | API client (T5.1) | `(cd frontend && npx vitest run src/api/grantsApi.test.ts)` | 3 passed | In `grantsApi.ts` change `method: 'POST'` to `'PUT'` → API-1 fails |
 | Screen and task table (T5.2) | `(cd frontend && npx vitest run src/TaskList.test.tsx src/GrantTasksScreen.test.tsx)` | 4 passed | In `TaskList.tsx` change `className={task.isOverdue ? 'overdue' : undefined}` to `className="overdue"` → FE-2 fails |
-| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet." | — |
-| Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | Now (red): 1 failed (FE-5) · after green: 2 passed | ⏳ written at green |
+| In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late" | — |
+| Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 3 passed | In `TaskList.tsx` change `onComplete(task.id)` to `onComplete(task.grantId)` → FE-13 fails |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |

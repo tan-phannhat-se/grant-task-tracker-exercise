@@ -7,7 +7,7 @@ export interface TaskListProps {
 }
 
 /** The grant's tasks, with overdue tasks highlighted. */
-export default function TaskList({ tasks }: TaskListProps) {
+export default function TaskList({ tasks, onComplete }: TaskListProps) {
   if (tasks.length === 0) {
     return <p>No tasks yet.</p>
   }
@@ -38,7 +38,9 @@ export default function TaskList({ tasks }: TaskListProps) {
                 <>
                   {/* A text label as well as the colour, so overdue does not rely on colour alone */}
                   {task.isOverdue && <span className="label">Overdue</span>}
-                  <button type="button">Complete</button>
+                  <button type="button" onClick={() => onComplete(task.id)}>
+                    Complete
+                  </button>
                 </>
               )}
             </td>
