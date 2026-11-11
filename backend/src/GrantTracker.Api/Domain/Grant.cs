@@ -83,6 +83,16 @@ public class Grant
                 field: "dueDate");
         }
 
+        // A priority outside Low, Medium and High would never count as High, so it could slip past BR-5.
+        if (!Enum.IsDefined(priority))
+        {
+            throw new DomainRuleException(
+                ErrorCodes.PriorityInvalid,
+                DomainErrorKind.Validation,
+                "Priority must be Low, Medium or High.",
+                field: "priority");
+        }
+
         var task = new GrantTask(trimmedTitle, dueDate, priority, createdAtUtc, idempotencyKey);
         _tasks.Add(task);
         return task;
