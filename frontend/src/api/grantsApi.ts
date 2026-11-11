@@ -57,22 +57,63 @@ export class ApiError extends Error {
   }
 }
 
+/** The error body the API sends with a 400, 404 or 409. */
+interface ProblemDetails {
+  detail?: string
+  code?: string
+  field?: string
+}
+
+const checkTheFormMessage = 'Check the form and try again.'
+const somethingWentWrongMessage = 'Something went wrong. Please try again.'
+
 /** Lists every grant, open and closed. */
-export async function getGrants(): Promise<GrantListItem[]> {
-  throw new Error('Not implemented')
+export function getGrants(): Promise<GrantListItem[]> {
+  return send('/grants')
 }
 
 /** Loads one grant with its tasks. */
-export async function getGrant(grantId: number): Promise<GrantDetail> {
-  throw new Error(`Not implemented: ${grantId}`)
+export function getGrant(grantId: number): Promise<GrantDetail> {
+  return send(`/grants/${grantId}`)
 }
 
 /** Adds a task to a grant and returns the saved task. */
-export async function addTask(grantId: number, task: NewTask): Promise<Task> {
-  throw new Error(`Not implemented: ${grantId} ${task.title}`)
+export function addTask(grantId: number, task: NewTask): Promise<Task> {
+  return send(`/grants/${grantId}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(task),
+  })
 }
 
 /** Completes a task and returns it with its completed date. */
-export async function completeTask(taskId: number): Promise<Task> {
-  throw new Error(`Not implemented: ${taskId}`)
+export function completeTask(taskId: number): Promise<Task> {
+  return send(`/tasks/${taskId}/complete`, { method: 'PUT' })
+}
+
+/** Sends one request and returns the JSON body, or throws an ApiError. */
+async function send<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`/api${path}`, init)
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+  return (await response.json()) as T
+}
+
+/** Turns a failed response into an ApiError; only a ProblemDetails body has a code and a message. */
+async function toApiError(response: Response): Promise<ApiError> {
+  const contentType = response.headers.get('Content-Type') ?? ''
+  if (!contentType.startsWith('application/problem+json')) {
+    // A badly formatted value gets a 400 with an empty body, so the field is unknown.
+    const message = response.status === 400 ? checkTheFormMessage : somethingWentWrongMessage
+    return new ApiError(response.status, null, null, message)
+  }
+
+  const problem = (await response.json()) as ProblemDetails
+  return new ApiError(
+    response.status,
+    problem.code ?? null,
+    problem.field ?? null,
+    problem.detail ?? somethingWentWrongMessage,
+  )
 }
