@@ -5,6 +5,7 @@
 - T6.2 red: HC-1, HC-2 fail with 404 (no `/health` route yet); tan writes the check
 - T6.1 green: `Idempotency-Key` header checked at the endpoint (UUID only); `GrantService.AddTaskAsync` looks the key up first and returns `AddTaskResult` (task + `IsRetry`); `GrantTask.MatchesRequest`; new kind `RequestMismatch` → 422; two error codes
 - T6.1 hand check on port 5099 with its own database file: 201 → 200 same id → 422 → 400 → 201 (no key); one task saved; only its own processes stopped
+- T6.5 (part): README notes for OP-1, OP-2, OP-4, OP-6 listed below for step 7; hand check of the screen waits for T6.3, T6.4
 - T6.2 green: tan wrote `DatabaseHealthCheck` (reads `Grants`; any exception → Unhealthy) and `/health` in `Program.cs`, in every environment; the AI reviewed it line by line, step by step
 
 **Files touched:**
@@ -23,7 +24,7 @@
 | 4 | T6.2 red | ✅ tests check only the status code, so tan is free to choose the body and the files |
 | 5 | T6.2 green (tan's code) | 🔧 AI review: `<param>` blocks, a line over 120, `ex.Message` as the description (now a fixed text + the exception), empty `//` comments in `Program.cs` · ✅ no new package (health checks ship with ASP.NET Core 8) |
 
-**Missing:** T6.3–T6.5
+**Missing:** T6.3, T6.4 (wait for step 5's Add task form) · T6.5 screen hand check
 
 **Review it yourself:**
 1. `docs/plan.md` D57–D62: do they say what you approved?
@@ -61,3 +62,16 @@
 | Retries by hand | API running, then the same `curl -X POST …/grants/2/tasks -H "Idempotency-Key: <uuid>"` twice | 201, then 200 with the same `id` | Change the title in the second call → 422 `idempotency-key-reused` |
 | Health (T6.2) | `dotnet test backend --filter "FullyQualifiedName~HealthCheckTests"` | 2 passed | In `DatabaseHealthCheck` replace the `AnyAsync` line with `await _db.Database.CanConnectAsync(cancellationToken);` → HC-2 fails |
 | Health by hand | API running, then `curl -i http://localhost:5080/health` | `200` · `Healthy` (also checked in Production on port 5099) | — |
+
+### README notes for step 7 (OP-1, OP-2, OP-4, OP-6)
+Facts come from the code, decisions or hand checks; "would" = not built.
+
+| OP | Today | Before going live (would) |
+|----|-------|---------------------------|
+| Why OP-3, OP-5 | OP-3: a duplicate or a silent failure corrupts an officer's work every day in regional offices. OP-5: small, and the load balancer needs it to make OP-1 work | — |
+| OP-1 copies, restarts | The API keeps no state in memory, so any copy can answer. A request cut by a restart is safe to send again (key, D7). `/health` lets the load balancer drop a copy. But SQLite is one file on one machine, and the database is created with `EnsureCreated` (D18) | One shared database server (SQL Server or PostgreSQL) for all copies; EF migrations instead of `EnsureCreated` |
+| OP-2 concurrency | BR-5 can break: officer A closes a grant while officer B adds a High task. Two retries with the same key at once → 500, the next click → 200 (D60) | `Version` concurrency token on `Grant` (SQLite has no `rowversion`), changed by `AddTask` and `Close`; a conflict → 409 `concurrency-conflict`, the screen reloads (tan's choice: README only) |
+| OP-4 support | Errors have a stable `code`; tasks keep `CreatedAt` (UTC). The error body has no request id (checked by hand: no `traceId`). No user identity, so no "who did what". .NET 8 logs handled 400/409 as Error (noisy, accepted) | Request id in every error body and log line, so an officer can quote it; logs in one central place; log in users and keep an audit trail |
+| OP-6 reporting | Per-day counts are possible from the data: `CreatedAt` and `CompletedDate`. The overdue list and the pending count load every task of the filtered grants (D41, D55), so they slow down as data grows; a `DueDate` index exists (D37) | A small read-only stats endpoint or dashboard (created/completed per day); filter overdue tasks in SQL; record request duration per route (.NET metrics) and alert on the overdue list |
+| Not in the list | No login: the key is for retries, not security. One time zone for "today" (D15). .NET 8 support ended 10 Nov 2026 (D9). SQLite file has no backup | Authentication with keys scoped per user; per-office time zone; move to .NET 10; backups |
+
