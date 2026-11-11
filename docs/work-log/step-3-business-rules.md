@@ -7,6 +7,7 @@
 - T3.3 red: 5 BR-2 tests
 - T3.3 green: BR-2 in `Grant.AddTask` (earliest allowed date = later of today and the application date; the message names it as `yyyy-MM-dd`)
 - T3.4 red: 4 BR-4 tests
+- T3.4 green: BR-4 in `GrantTask.Complete` (records today; a repeat keeps the first date)
 
 **Files touched:**
 - `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
@@ -14,6 +15,7 @@
 - `backend/tests/GrantTracker.Tests/Domain/Br3TitleTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br2DueDateTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
+- `backend/src/GrantTracker.Api/Domain/GrantTask.cs`
 
 ### Review
 | # | Check | Result |
@@ -35,9 +37,10 @@
 | 8 | T3.3 red: BR-2 tests fail on their asserts | ✅ 3 of 5 failed (`Assert.Throws`); BR2-2 and BR2-4 (the two boundaries) pass because there is no date limit yet |
 | 9 | T3.3 green, then broken three ways on purpose | ✅ 14/14 passed · `<=` → 2 red (both boundaries) · application date ignored → 2 red · codes swapped → 3 red · restored |
 | 10 | T3.4 red | ✅ 4/4 failed on `NotImplementedException` from `Complete`; the green step's break checks will prove the asserts |
+| 11 | T3.4 green, then broken twice on purpose | ✅ 18/18 passed · repeat guard removed → BR4-2 red · `CompletedDate = DueDate` → 4 red · restored |
 
 **Test it yourself:**
-- [ ] `dotnet test backend` → 14 passed
+- [ ] `dotnet test backend` → 18 passed
 - [ ] Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 2 tests fail → undo
 - [ ] `dotnet test backend --filter Br3` → 6 passed
 - [ ] Change `>` to `>=` in the BR-3 length check → BR3-2 fails → undo

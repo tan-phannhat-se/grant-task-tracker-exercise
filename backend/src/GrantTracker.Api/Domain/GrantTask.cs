@@ -54,7 +54,13 @@ public class GrantTask
     /// </summary>
     public void Complete(DateOnly today)
     {
-        throw new NotImplementedException("T3.5");
+        // BR-4: a repeat keeps the first date, so a retried request is safe.
+        if (IsCompleted)
+        {
+            return;
+        }
+
+        CompletedDate = today;
     }
 
     /// <summary>
