@@ -46,16 +46,17 @@ Filled at the start of each step: one table per step, one commit per task.
 | T2.3 | Test helpers: fixed dates, sample grants and tasks | AI | `backend/tests/GrantTracker.Tests/Domain/` |
 | ~~T2.4~~ | Moved into step 3: each rule now ships its tests and code together (D29) | — | — |
 
-**T2.1 · Domain test cases** (29, each catches a different bug)
+**T2.1 · Domain test cases** (37: 29 from T2.1 + 8 added in T3.7 after the independent review; each catches a different bug)
 
-#### BR-1 · No task on a closed grant (3)
+#### BR-1 · No task on a closed grant (4)
 | # | Case | Catches |
 |---|------|---------|
 | BR1-1 | Open grant + valid task → task added | Rule blocks open grants too |
 | BR1-2 | Closed grant + valid task → `grant-closed` (409), task count unchanged | BR-1 missing, or task added despite the error |
 | BR1-3 | Closed grant + empty title → `grant-closed`, not `title-required` | Wrong check order (D20) |
+| BR1-4 | Closed grant + due yesterday → `grant-closed`, not `due-date-in-past` | Due-date check running before BR-1 |
 
-#### BR-2 · Due date not in the past, not before the application date (5)
+#### BR-2 · Due date not in the past, not before the application date (6)
 | # | Case | Catches |
 |---|------|---------|
 | BR2-1 | Grant applied in the past, due yesterday → `due-date-in-past`, Field `dueDate` | Condition 1 (not in the past) missing |
@@ -63,8 +64,9 @@ Filled at the start of each step: one table per step, one commit per task.
 | BR2-3 | Grant applies on 20 Nov, due 15 Nov → `due-date-before-application` | Condition 2 (not before application) missing |
 | BR2-4 | Grant applies on 20 Nov, due 20 Nov → task added | Boundary of condition 2 |
 | BR2-5 | Grant applies on 20 Nov, due yesterday → `due-date-before-application`, message names 20 Nov | Error reports the wrong condition (D21) |
+| BR2-6 | Grant applying today, due yesterday → `due-date-in-past` | Wrong code when today and the application date are the same day |
 
-#### BR-3 · Title required, at most 100 characters (5)
+#### BR-3 · Title required, at most 100 characters (6)
 | # | Case | Catches |
 |---|------|---------|
 | BR3-1 | Title `""` or spaces only → `title-required`, Field `title` (one `[Theory]`, 2 inputs) | Empty check missing · not trimmed |
@@ -72,14 +74,16 @@ Filled at the start of each step: one table per step, one commit per task.
 | BR3-3 | 101 characters → `title-too-long` | Length check missing |
 | BR3-4 | `"  Check docs  "` → task added, saved as `"Check docs"` | Checked trimmed but saved untrimmed |
 | BR3-5 | 100 characters with 2 spaces on each side → task added | Length measured before trimming |
+| BR3-6 | Empty title + due yesterday → `title-required`, not a due-date error | Due-date check running before BR-3 |
 
-#### BR-4 · Completing records the date; completing again keeps it (4)
+#### BR-4 · Completing records the date; completing again keeps it (5)
 | # | Case | Catches |
 |---|------|---------|
 | BR4-1 | Pending task, completed on 11 Nov → `CompletedDate` = 11 Nov | Date not recorded |
 | BR4-2 | Completed on 11 Nov, completed again on 12 Nov → still 11 Nov, no error | Date overwritten, or an error on repeat (D12) |
 | BR4-3 | Task due 8 Nov, completed on 11 Nov → `CompletedDate` = 11 Nov, `DueDate` still 8 Nov | Due date "fixed" to look on time |
-| BR4-4 | Task on a closed grant, completed → allowed | Completion wrongly blocked (D24) |
+| BR4-4 | Task on a closed grant, completed → allowed | Nothing yet (a task does not know its grant); guards D24 if that link is added |
+| BR4-5 | Completed on 11 Nov, completed again with 10 Nov → still 11 Nov | First date overwritten when the new date is earlier |
 
 #### BR-5 · No closing while a High-priority task is pending (6)
 | # | Case | Catches |
@@ -91,7 +95,7 @@ Filled at the start of each step: one table per step, one commit per task.
 | BR5-5 | Grant with no tasks → grant closed | Crash on an empty list |
 | BR5-6 | Already closed grant, closed again → no error, still Closed | Error on repeat (D13) |
 
-#### BR-6 · Overdue = not completed and due before today (6)
+#### BR-6 · Overdue = not completed and due before today (8)
 | # | Case | Catches |
 |---|------|---------|
 | BR6-1 | Pending, due yesterday → overdue | BR-6 missing |
@@ -100,6 +104,14 @@ Filled at the start of each step: one table per step, one commit per task.
 | BR6-4 | Same task due 12 Nov: checked with today 11 Nov → no, 13 Nov → yes | Real clock or stored state used instead of `today` |
 | BR6-5 | Due 10 Nov, completed 11 Nov → `IsCompletedLate` true, `IsOverdue` false | Late and overdue mixed up (D26) |
 | BR6-6 | Due 10 Nov, completed 10 Nov → `IsCompletedLate` false | `>=` instead of `>` (on the due date is on time) |
+| BR6-7 | Due 10 Nov, completed 7 Nov → `IsCompletedLate` false | "Late" true for any completion not on the due date |
+| BR6-8 | Pending, due yesterday → `IsCompletedLate` false, `IsOverdue` true | A pending task flagged as completed late |
+
+#### Stored fields · `AddTask` stores what it is given (2, added in T3.7)
+| # | Case | Catches |
+|---|------|---------|
+| ST-1 | Idempotency key passed in → stored on the task | Key dropped, breaking safe retries (OP-3) |
+| ST-2 | Creation time passed in → stored as `CreatedAt` | Real clock used instead of the given time |
 
 ### Step 3 · Business rules
 Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing tests (red), `feat(T3.x)` makes them pass (green).
@@ -112,7 +124,7 @@ Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing
 | T3.4 | BR-4 complete (4 cases) | AI | `Domain/GrantTask.cs` · `tests/Domain/Br4CompleteTests.cs` |
 | T3.5 | BR-5 close grant (6 cases) | **tan** (AI writes the tests) | `Domain/Grant.cs` · `tests/Domain/Br5CloseGrantTests.cs` |
 | T3.6 | BR-6 overdue and completed late (6 cases) | AI | `Domain/GrantTask.cs` · `tests/Domain/Br6OverdueTests.cs` |
-| T3.7 | Independent review of all six rules by a reviewer subagent | AI | — |
+| T3.7 | Independent review of all six rules by three reviewer subagents (logic, mutations, consistency with brief and plan); gaps closed with 8 tests | AI | domain tests · `Domain/Grant.cs` · docs |
 
 T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because all three change `Grant.AddTask`. T3.4 and T3.6 only touch `GrantTask.cs` and their own test files.
 
@@ -122,6 +134,7 @@ T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because al
 - Step 6 (OP-3): retry with the same idempotency key on a closed grant → still 409, no task created.
 - Step 5 (screen): after Complete, show "Completed on {date}" from the response, so a repeat shows the original date.
 - Step 4 (API): task responses include `completedLate` (D26).
+- Step 4 (API): load a grant together with its tasks (`Include`) before `Close()`; otherwise BR-5 sees no tasks and lets the close through.
 - Step 5 (screen): a task completed late shows a "Completed late" label (D26).
 
 ## Decisions
@@ -148,10 +161,10 @@ T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because al
 | D19 | Code style: C# uses the standard .NET style (4 spaces, braces on their own line) via `.editorconfig` + `dotnet format`; the frontend uses Prettier. `./test.sh` fails on badly formatted code | tan chose the .NET default style: what C# reviewers expect. A checked format keeps AI-written and hand-written code identical. |
 | D20 | `AddTask` checks BR-1 (closed grant) before BR-3 (title) and BR-2 (due date) | When the grant is closed, fixing the input cannot help, so that error comes first. |
 | D21 | A due date that is too early is checked against the earliest allowed date = the later of today and the application date; the error names that date (`due-date-in-past` when it is today, `due-date-before-application` otherwise) | One message tells the officer the date that will work, so one fix is enough. Reporting "in the past" when the application date is later would send them to a date that still fails. |
-| D22 | Titles are trimmed at both ends before BR-3 is checked, and the trimmed title is saved; spaces inside the title are kept | What is checked is what is saved, so a saved title is always 1–100 characters. Leading/trailing spaces are almost always accidental; inner spaces are the user's text. |
+| D22 | Titles are trimmed at both ends before BR-3 is checked, and the trimmed title is saved; whitespace inside the title is kept (trimming removes spaces, tabs and line breaks at both ends) | What is checked is what is saved, so a saved title is always 1–100 characters. Leading/trailing spaces are almost always accidental; inner spaces are the user's text. |
 | D23 | Missing or `null` fields are handled at the API boundary (400); the domain trusts its non-nullable types and is not tested with `null` | Common .NET practice: validate at the boundary, trust inside. `null` only comes from HTTP input, so it is tested where it happens. |
 | D24 | Tasks on a closed grant can still be completed | Completing records work that was really done; it adds nothing, so BR-1 does not apply. A closed grant has no pending High task (BR-5), so only Low/Medium leftovers can be completed. |
-| D25 | A refused close names every pending High task in the message; no closed date is stored, so closing again just shows "already closed" | Tells the officer exactly what to finish. A closed date is not in the brief and would add a second source of truth next to `Status`. |
+| D25 | A refused close names every pending High task in the message; no closed date is stored, so closing again returns 200 unchanged, as D13 | Tells the officer exactly what to finish. A closed date is not in the brief and would add a second source of truth next to `Status`. |
 | D26 | `GrantTask.IsCompletedLate` (completed after the due date), computed like `IsOverdue`; returned by the API and shown on screen as a "Completed late" label | Not in the brief; tan asked for it so "overdue" (still to do and late) and "completed late" (done, but late) stay separate, tested concepts. Costs one line. |
 | D27 | Domain rule violations throw `DomainRuleException` with a `Code`, a `Kind` (Validation → 400, RuleRefused → 409) and an optional `Field` (the input the error belongs to, so the screen shows it next to that input); one handler maps it to ProblemDetails | Simple and common in .NET. A new error needs no change in any endpoint (open/closed). |
 | D28 | No data annotations (`[Required]`, `[MaxLength]`) on domain classes; rules are enforced in domain methods, database mapping uses EF Fluent API in `Data/` | An annotation only labels a rule; a direct call can still break it. Each rule stays in one place and is unit-testable. |

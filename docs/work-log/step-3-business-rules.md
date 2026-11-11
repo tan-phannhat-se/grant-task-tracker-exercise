@@ -1,4 +1,4 @@
-# Work log · Step 3 · Business rules · 2026-11-11 (in progress)
+# Work log · Step 3 · Business rules · 2026-11-11 (in progress: B1–B3 waiting for tan)
 **Done:**
 - T3.1 red: 3 BR-1 tests
 - T3.1 green: BR-1 in `Grant.AddTask`, minimal `Grant.Close()` (sets Closed; BR-5 left for tan as a TODO)
@@ -12,50 +12,54 @@
 - T3.5 green: BR-5 in `Grant.Close()`, **written by tan**; AI review found 2 bugs (closed before checking, Medium blocked) and 4 style points, all fixed by tan
 - T3.6 red: 6 BR-6 tests (7 runs) and an `IsCompletedLate` stub so they compile
 - T3.6 green: `IsOverdue(today)` (BR-6) and `IsCompletedLate` (D26) in `GrantTask`; no `NotImplementedException` left in the domain
+- T3.7: independent review by three subagents (logic · 29 mutations · consistency with brief and plan); no logic bug; 8 surviving mutations closed with 8 new tests and 3 extra asserts; `Tasks` made read-only; D22 and D25 reworded
 
 **Files touched:**
-- `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
 - `backend/src/GrantTracker.Api/Domain/Grant.cs`
-- `backend/tests/GrantTracker.Tests/Domain/Br3TitleTests.cs`
-- `backend/tests/GrantTracker.Tests/Domain/Br2DueDateTests.cs`
-- `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
 - `backend/src/GrantTracker.Api/Domain/GrantTask.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br1ClosedGrantTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br2DueDateTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br3TitleTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/Br4CompleteTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br5CloseGrantTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br6OverdueTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/StoredFieldsTests.cs`
+- `docs/plan.md`
+- `CLAUDE.md` (switch rule, self-check rule, rule-conflict rule)
+- `docs/ai-log.md` (entries 9 and 10)
 
 ### Review
-| # | Check | Result |
-|---|-------|--------|
-| 1 | One test per approved case (BR1-1 … BR1-3) | ✅ |
-| 2 | Fixed dates only, through `TestData` | ✅ |
-| 3 | Every test has a summary: case id, scenario → expected result, and the bug it catches | ✅ tan asked for it |
+| # | Task | Result |
+|---|------|--------|
+| 1 | T3.1 BR-1 | ✅ One test per case, fixed dates, every test has a summary with "Catches" |
+| 2 | T3.2 BR-3 | 🔧 Two `if`s on one value → one `switch` (tan noticed) |
+| 3 | T3.3 BR-2 | ✅ Date in the message uses the invariant culture, so it is the same on every machine |
+| 4 | T3.4 BR-4 | ✅ A repeat returns early and keeps the first date |
+| 5 | T3.5 BR-5 (tan's code) | 🔧 First version closed before checking and blocked Medium; fixed by tan after review |
+| 6 | T3.6 BR-6 | ✅ Overdue and completed late computed, never stored |
+| 7 | T3.7 independent review | 🔧 `Tasks` returned the real list → `AsReadOnly()`; `Grant` summary named every rule → fixed; ⏳ B1 invalid priority, B2 how to count characters, B3 long property comments: waiting for tan |
 
 ### Test
-| # | Check | Result |
-|---|-------|--------|
-| 1 | T3.1 red: BR-1 tests fail for the right reason | ✅ 3 failed, all `NotImplementedException` (no compile or setup error) |
-| 2 | Format and line length | ✅ |
-| 3 | T3.1 green: BR-1 tests pass | ✅ 3/3 |
-| 4 | BR-1 check removed on purpose → tests go red | ✅ BR1-2 and BR1-3 failed, restored |
-| 5 | Task added before the check on purpose → `Assert.Empty` catches it | ✅ BR1-2 failed, restored |
-| 6 | T3.2 red: BR-3 tests fail on their asserts | ✅ 5 of 6 runs failed; BR3-2 (exactly 100) passes because there is no limit yet, and guards `>` vs `>=` once there is |
-| 7 | T3.2 green, then `.Trim()` removed and `>` changed to `>=` on purpose | ✅ 9/9 passed · no trim → 3 red · `>=` → 2 red · restored (rerun after the `switch` rewrite) |
-| 8 | T3.3 red: BR-2 tests fail on their asserts | ✅ 3 of 5 failed (`Assert.Throws`); BR2-2 and BR2-4 (the two boundaries) pass because there is no date limit yet |
-| 9 | T3.3 green, then broken three ways on purpose | ✅ 14/14 passed · `<=` → 2 red (both boundaries) · application date ignored → 2 red · codes swapped → 3 red · restored |
-| 10 | T3.4 red | ✅ 4/4 failed on `NotImplementedException` from `Complete`; the green step's break checks will prove the asserts |
-| 11 | T3.4 green, then broken twice on purpose | ✅ 18/18 passed · repeat guard removed → BR4-2 red · `CompletedDate = DueDate` → 4 red · restored |
-| 12 | T3.5 red: BR-5 tests | ✅ 2 of 6 failed (`Assert.Throws`): BR5-1, BR5-2. The other 4 pass as guards against blocking too much |
-| 13 | T3.5 green (tan's code), then broken three ways on purpose | ✅ 24/24 passed · close before the check → BR5-1 red · High filter removed → 3 red · completion filter removed → BR5-4 red · restored |
-| 14 | T3.6 red | ✅ 7/7 runs failed on `NotImplementedException`; the other 24 tests still pass. The green step's break checks will prove the asserts |
-| 15 | T3.6 green, then broken three ways on purpose | ✅ 31/31 passed · `<=` → BR6-2 red · completion check removed → 3 red · late uses `>=` → BR6-6 red · restored |
+| # | Task | Red | Green | Break on purpose → result (all restored) |
+|---|------|-----|-------|------------------------------------------|
+| 1 | T3.1 BR-1 | 3/3 failed (`NotImplementedException`) | 3/3 | No check → 2 red · task added before the check → 1 red |
+| 2 | T3.2 BR-3 | 5/6 failed on asserts | 9/9 | No trim → 3 red · `>=` → 2 red |
+| 3 | T3.3 BR-2 | 3/5 failed on asserts | 14/14 | `<=` → 2 red · application date ignored → 2 red · codes swapped → 3 red |
+| 4 | T3.4 BR-4 | 4/4 failed (`NotImplementedException`) | 18/18 | No repeat guard → 1 red · `CompletedDate = DueDate` → 4 red |
+| 5 | T3.5 BR-5 | 2/6 failed on asserts | 24/24 | Close before the check → 1 red · no High filter → 3 red · no completion filter → 1 red |
+| 6 | T3.6 BR-6 | 7/7 failed (`NotImplementedException`) | 31/31 | `<=` → 1 red · no completion check → 3 red · late uses `>=` → 1 red |
+| 7 | T3.7 review | 29 mutations: 20 killed, 9 survived | 39/39 | The 8 survivors that matter now fail at least one new test; the 9th only changes message wording |
 
-**Test it yourself:** run all with `dotnet test backend` → 31 passed, then each rule:
+**Missing:** B1–B3 decisions (tan) · loading a grant with its tasks before `Close()` is a step 4 test (see `plan.md`).
 
-| Rule | Run | Expect | Break on purpose → expect (then undo) |
-|------|-----|--------|----------------------------------------|
-| BR-1 | `dotnet test backend --filter Br1` | 3 passed | Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 2 fail |
-| BR-3 | `dotnet test backend --filter Br3` | 6 passed | `case > GrantTask.TitleMaxLength` → `>=` → BR3-2 fails |
-| BR-2 | `dotnet test backend --filter Br2` | 5 passed | `dueDate < earliestDueDate` → `<=` → BR2-2 and BR2-4 fail |
-| BR-4 | `dotnet test backend --filter Br4` | 4 passed | Remove `if (IsCompleted) return;` in `GrantTask.Complete` → BR4-2 fails |
+**Test it yourself:** run all with `dotnet test backend` → 39 passed, then each group:
+
+| Group | Run | Expect | Break on purpose → expect (then undo) |
+|-------|-----|--------|----------------------------------------|
+| BR-1 | `dotnet test backend --filter Br1` | 4 passed | Comment out the `if (Status == GrantStatus.Closed)` check in `Grant.AddTask` → 3 fail |
+| BR-3 | `dotnet test backend --filter Br3` | 7 passed | `case > GrantTask.TitleMaxLength` → `>=` → BR3-2 and BR3-5 fail |
+| BR-2 | `dotnet test backend --filter Br2` | 6 passed | `dueDate < earliestDueDate` → `<=` → BR2-2 and BR2-4 fail |
+| BR-4 | `dotnet test backend --filter Br4` | 5 passed | Remove `if (IsCompleted) return;` in `GrantTask.Complete` → BR4-2 and BR4-5 fail |
 | BR-5 | `dotnet test backend --filter Br5` | 6 passed | Move `Status = GrantStatus.Closed;` above the check in `Grant.Close` → BR5-1 fails |
-| BR-6 | `dotnet test backend --filter Br6` | 7 passed | `DueDate < today` → `<=` in `GrantTask.IsOverdue` → BR6-2 fails |
+| BR-6 | `dotnet test backend --filter Br6` | 9 passed | `DueDate < today` → `<=` in `GrantTask.IsOverdue` → BR6-2 fails |
+| Stored fields | `dotnet test backend --filter StoredFields` | 2 passed | `IdempotencyKey = null;` in the `GrantTask` constructor → ST-1 fails |
