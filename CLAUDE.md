@@ -55,6 +55,8 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 ## Code style
 - **Format:** code must pass the format check in `./test.sh` (D19).
   - Run `dotnet format backend/GrantTracker.sln` and `cd frontend && npm run format` before handing work over.
+- **Names tell a developer what a thing is on their own; the comment only confirms it.**
+  - Before proposing a name, check: would a developer guess it right without the comment? If not, find another name.
 - **Simple and clear first.** A newcomer must understand the code on first read:
   - plain logic, small methods, clear names, no clever tricks.
 - Several checks on the same value use one `switch` (e.g. `case 0:` · `case > Max:`), not a chain of `if`s.
