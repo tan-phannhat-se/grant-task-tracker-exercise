@@ -15,16 +15,20 @@
 - T5.4 red: FE-6 (2 inputs), FE-7a, FE-7b (100 characters with spaces around, so it also catches "counted before trimming"), FE-8; `AddTaskForm` stub renders nothing. Checked first that `user.type` fills a date input in jsdom (throwaway test, deleted)
 - D51's extension was committed inside step 6's commit `768362f` (shared `plan.md`)
 - T5.4 green: `AddTaskForm` (title trimmed then checked, due date required, priority starts at Medium; errors linked to their input with `aria-describedby`; sends with `addTask`); D53 adds "Priority starts at Medium" (tan chose)
+- T5.5 red: FE-9, FE-10 (`AddTaskForm` alone), FE-11 (screen; the fake API now adds tasks, with fresh data for each test so no test sees another's task)
+- `./test.sh` checks frontend lines over 100 characters (tan approved); counted in UTF-8 because `bash` grep counts bytes by default; the 10 long comment lines wrapped
 
 **Files touched:**
 - `frontend/src/api/`: `grantsApi.ts` · `grantsApi.test.ts` (T5.1)
-- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4)
+- `frontend/src/`: `GrantTasksScreen.tsx` + `.test.tsx` · `TaskList.tsx` + `.test.tsx` · `App.tsx` · `index.css` (T5.2) · same four files (T5.3) · `AddTaskForm.tsx` + `.test.tsx` (T5.4) · `AddTaskForm.test.tsx` · `GrantTasksScreen.test.tsx` (T5.5) · `TaskList.tsx` · `api/grantsApi.ts` · `api/grantsApi.test.ts` (wrapped lines)
+- `test.sh` (frontend line length)
 - `docs/plan.md` (D50: opens on the first grant; D53: priority) · `CLAUDE.md` (frontend exception to "one type per file") · `docs/ai-log.md`
 - `docs/plan.md` (Step 5 task table, D50–D54) · `docs/work-log/step-5-frontend.md`
 
 ### Review
 | # | Task | Result |
 |---|------|--------|
+| 5 | T5.5 | 🔧 10 comment lines over 100 characters (Prettier does not wrap comments): all wrapped; `./test.sh` now checks it |
 | 4 | T5.4 | 🔧 see last item · ✅ title rule in one function (`titleErrorFor`) · two `if`s, not a `switch`: TypeScript has no `case > 100` like C#, and `switch (true)` would be a trick · 🔧 props interfaces (`TaskListProps`, `AddTaskFormProps`) sat in their component's file against "one type per file": tan agreed, exception added to `CLAUDE.md`, AI log entry |
 | 3 | T5.3 | ✅ no short-circuit tricks (`if` blocks) · `screenError` named for what it holds now |
 | 2 | T5.2 | 🔧 `isLatest && setGrant(...)` rewritten as a plain `if` ("no clever tricks") · ✅ no new package, no state library |
@@ -41,6 +45,7 @@
 ### Test
 | # | Task | Red | Green | Break on purpose → result |
 |---|------|-----|-------|---------------------------|
+| 5 | T5.5 | ✅ 3 failed (FE-9, FE-10: message never shown, unhandled rejection · FE-11: form not on the screen) | ⏳ | ⏳ |
 | 4 | T5.4 | ✅ 5 failed (no form: no Title or Due date label) | ✅ 15 passed · frontend checks green; `./test.sh` red only on step 6's 2 `HealthCheckTests` | ✅ 7 breaks, each red: not trimmed before check → FE-6, FE-7b · `>=` → FE-7b · length check removed → FE-7a · empty check removed → FE-6 · due date check removed → FE-8 · error not linked to input → FE-6, FE-7a · untrimmed title sent → FE-7b |
 | 3 | T5.3 | ✅ 1 failed (no "Completed on 2026-11-01": the button does nothing) · FE-13: 1 failed (no alert, unhandled rejection) | ✅ 10 passed · frontend checks green; `./test.sh` red only on step 6's red backend tests (`HealthCheckTests`, `AddTaskRetryTests`) | ✅ 5 breaks, each red: button calls nothing → FE-5, FE-13 · wrong id sent → FE-13 · screen uses its own today → FE-5 · row not replaced → FE-5 · API message ignored → FE-13 |
 | 2 | T5.2 | ✅ 4 failed (stubs render nothing: no row, no task text) | ✅ 7 passed · `./test.sh` exit 0 | ✅ 7 breaks, each red: every row overdue → FE-2 · no Overdue label → FE-2 · completed shown as pending → FE-3, FE-4 · late label on every completed → FE-4 · drop-down change ignored → FE-1 · opens empty → FE-1 · status not shown → FE-1 · FE-12: empty check removed → FE-12 |
@@ -77,5 +82,7 @@
 | In the browser | API running, `(cd frontend && npm run dev)`, open http://localhost:5173 | Opens on GR-100001; "Verify bank details" pink with "Overdue"; choose GR-100003 → "Closed", "Completed on …"; GR-100004 → "No tasks yet."; Complete on "Verify bank details" → "Completed on {today}" + "Completed late" | — |
 | Complete (T5.3) | `(cd frontend && npx vitest run src/GrantTasksScreen.test.tsx)` | 3 passed | In `TaskList.tsx` change `onComplete(task.id)` to `onComplete(task.grantId)` → FE-13 fails |
 | Form checks (T5.4) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx)` | 5 passed | In `AddTaskForm.tsx` change `trimmedTitle.length > titleMaxLength` to `>=` → FE-7b fails |
+| API errors and adding (T5.5) | `(cd frontend && npx vitest run src/AddTaskForm.test.tsx src/GrantTasksScreen.test.tsx)` | Now (red): 3 failed · after green: all passed | ⏳ written at green |
+| Line length | `./test.sh` | Section "Frontend line length (max 100)" prints nothing | Add a 101-character comment line in `TaskList.tsx` → `./test.sh` prints it and stops |
 | Types | `(cd frontend && npx tsc -b)` | No output | Change `dueDate: string` to `number` in `Task` → type errors in the test |
 | Real responses | API running, then `curl -s http://localhost:5080/grants/1` | Fields match `Task` and `GrantDetail` | — |

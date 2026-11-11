@@ -100,7 +100,7 @@ async function send<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
-/** Turns a failed response into an ApiError; only a ProblemDetails body has a code and a message. */
+/** Turns a failed response into an ApiError; only ProblemDetails has a code and a message. */
 async function toApiError(response: Response): Promise<ApiError> {
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!contentType.startsWith('application/problem+json')) {

@@ -50,7 +50,8 @@ describe('grantsApi', () => {
   })
 
   /**
-   * API-2: 400 ProblemDetails with code and field → ApiError with code, field, and detail as message.
+   * API-2: 400 ProblemDetails with code and field
+   * → ApiError with code, field, and detail as message.
    * Catches: the API's error body ignored, so the screen cannot say what is wrong or where.
    */
   it('addTask_ProblemDetails_ThrowsApiErrorWithCodeFieldAndDetail', async () => {
@@ -81,7 +82,8 @@ describe('grantsApi', () => {
   })
 
   /**
-   * API-3: 400 with an empty body (a badly formatted value) → ApiError "Check the form and try again."
+   * API-3: 400 with an empty body (a badly formatted value)
+   * → ApiError "Check the form and try again."
    * Catches: a crash while reading an empty body, so the officer sees nothing.
    */
   it('addTask_EmptyBody400_ThrowsCheckTheFormError', async () => {

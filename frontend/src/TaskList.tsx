@@ -36,7 +36,7 @@ export default function TaskList({ tasks, onComplete }: TaskListProps) {
                 </>
               ) : (
                 <>
-                  {/* A text label as well as the colour, so overdue does not rely on colour alone */}
+                  {/* A text label too, so overdue does not rely on colour alone */}
                   {task.isOverdue && <span className="label">Overdue</span>}
                   <button type="button" onClick={() => onComplete(task.id)}>
                     Complete

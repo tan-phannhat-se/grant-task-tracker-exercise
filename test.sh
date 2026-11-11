@@ -10,6 +10,12 @@ echo "== Backend line length (max 120) =="
 long_lines=$(grep -rnE --include='*.cs' --exclude-dir=bin --exclude-dir=obj '^.{121,}$' backend || true)
 if [ -n "$long_lines" ]; then echo "$long_lines"; exit 1; fi
 
+echo "== Frontend line length (max 100) =="   # Prettier does not wrap comments
+# UTF-8 so grep counts characters, not bytes: an arrow (→) is one character but three bytes.
+long_lines=$(LC_ALL=C.UTF-8 grep -rnE --include='*.ts' --include='*.tsx' \
+  --exclude-dir=node_modules --exclude-dir=dist '^.{101,}$' frontend || true)
+if [ -n "$long_lines" ]; then echo "$long_lines"; exit 1; fi
+
 echo "== No decision or OP numbers in code =="
 refs=$(grep -rnE --include='*.cs' --include='*.ts' --include='*.tsx' \
   --exclude-dir=bin --exclude-dir=obj --exclude-dir=node_modules --exclude-dir=dist \
