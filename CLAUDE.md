@@ -89,6 +89,7 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 - Each test has a summary: case id, scenario → expected result, and a "Catches:" line (the bug it catches).
 - Fixed dates only (e.g. `new DateOnly(2026, 11, 11)` or `FakeTimeProvider`).
   - Tests must not depend on the real date or on run order.
+  - A test that proves the injected clock is used takes an instant in the past, so the real clock never matches it.
 - Each test must catch a different bug. Before adding a test, say which bug it catches.
 - Prove a new test can fail: break the code on purpose, watch it go red, restore.
 
