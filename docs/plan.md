@@ -147,7 +147,7 @@ Each endpoint is one task, done test-first like step 3: a red commit with its in
 | T4.6 | `POST /grants/{id}/tasks` (201; missing fields handled at the boundary, D23, D48, D49) | AI | same |
 | T4.7 | `PUT /tasks/{id}/complete` | AI | same |
 | T4.8 | `PUT /grants/{id}/close` (loads the grant with its tasks) | AI | same |
-| T4.9 | `GET /tasks/overdue` (filter D14, most overdue first, `daysOverdue`) | AI | same |
+| T4.9 | `GET /tasks/overdue` (filter D14, most overdue first, `daysOverdue`; D55, D56) | AI | same |
 
 The idempotency-key retry (200 with the existing task) is built in step 6 (OP-3).
 
@@ -234,3 +234,5 @@ Each task is done test-first like step 4: a red commit with its Vitest tests, th
 | D52 | The Add task form stays usable on a closed grant, which shows a "Closed" label; the API refuses with 409 and the screen shows that error | BR-1 stays in one place (the server), and the brief asks the screen to show BR-1's API error. Trade-off: the officer learns it after submitting. |
 | D53 | Client checks: title required and at most 100 characters after trimming (same count as the API), due date required. BR-2 is left to the API | "Today" belongs to the server's time zone; a check with the officer's clock could disagree around midnight. |
 | D54 | The API client's types (`Task`, `GrantDetail`…) live in its one module, `frontend/src/api/grantsApi.ts`, an exception to "one type per file" | `CLAUDE.md` asks for the API client in one typed module; the types describe the API's JSON and change together. |
+| D55 | Overdue list: the service loads the grants (filtered by status) with their tasks and the domain decides which are overdue (`IsOverdue(today)`); ordered by due date (most overdue first), then id; `daysOverdue` = today − due date | BR-6 stays in one place, like D41. Trade-off: tasks that are not overdue are loaded too; filter in SQL with the `DueDate` index once data grows (README, OP-6). |
+| D56 | One `GrantStatusFilter.Parse` reads `All`/`Open`/`Closed` for both `?status=` (missing = all, D42) and `?grantStatus=` (missing = Open, D14); a bad value → 400 `status-invalid` on that field | The allowed values are written once. |
