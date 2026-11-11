@@ -46,7 +46,7 @@ Filled at the start of each step: one table per step, one commit per task.
 | T2.3 | Test helpers: fixed dates, sample grants and tasks | AI | `backend/tests/GrantTracker.Tests/Domain/` |
 | ~~T2.4~~ | Moved into step 3: each rule now ships its tests and code together (D29) | — | — |
 
-**T2.1 · Domain test cases** (37: 29 from T2.1 + 8 added in T3.7 after the independent review; each catches a different bug)
+**T2.1 · Domain test cases** (38: 29 from T2.1, 8 added in T3.7 after the independent review, 1 added in T3.8; each catches a different bug)
 
 #### BR-1 · No task on a closed grant (4)
 | # | Case | Catches |
@@ -113,6 +113,11 @@ Filled at the start of each step: one table per step, one commit per task.
 | ST-1 | Idempotency key passed in → stored on the task | Key dropped, breaking safe retries (OP-3) |
 | ST-2 | Creation time passed in → stored as `CreatedAt` | Real clock used instead of the given time |
 
+#### Priority · only Low, Medium or High (1, added in T3.8)
+| # | Case | Catches |
+|---|------|---------|
+| PR-1 | Priority 0, 150 or 999 → `priority-invalid` (400) on `priority`, no task added (`[Theory]`, 3 inputs) | Undefined priority accepted (BR-5 would never count it as High), or a range check that lets 150 through |
+
 ### Step 3 · Business rules
 Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing tests (red), `feat(T3.x)` makes them pass (green).
 
@@ -125,6 +130,7 @@ Each task is one rule, done test-first in two commits: `test(T3.x)` adds failing
 | T3.5 | BR-5 close grant (6 cases) | **tan** (AI writes the tests) | `Domain/Grant.cs` · `tests/Domain/Br5CloseGrantTests.cs` |
 | T3.6 | BR-6 overdue and completed late (6 cases) | AI | `Domain/GrantTask.cs` · `tests/Domain/Br6OverdueTests.cs` |
 | T3.7 | Independent review of all six rules by three reviewer subagents (logic, mutations, consistency with brief and plan); gaps closed with 8 tests | AI | domain tests · `Domain/Grant.cs` · docs |
+| T3.8 | Undefined priority refused in the domain (D30) | AI | `Domain/Grant.cs` · `Domain/ErrorCodes.cs` · `tests/Domain/PriorityTests.cs` |
 
 T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because all three change `Grant.AddTask`. T3.4 and T3.6 only touch `GrantTask.cs` and their own test files.
 
@@ -169,6 +175,9 @@ T3.1 → T3.2 → T3.3 run in this order (D20) and one after another, because al
 | D27 | Domain rule violations throw `DomainRuleException` with a `Code`, a `Kind` (Validation → 400, RuleRefused → 409) and an optional `Field` (the input the error belongs to, so the screen shows it next to that input); one handler maps it to ProblemDetails | Simple and common in .NET. A new error needs no change in any endpoint (open/closed). |
 | D28 | No data annotations (`[Required]`, `[MaxLength]`) on domain classes; rules are enforced in domain methods, database mapping uses EF Fluent API in `Data/` | An annotation only labels a rule; a direct call can still break it. Each rule stays in one place and is unit-testable. |
 | D29 | Business rules are built one rule at a time (vertical slices): a red commit with that rule's tests, then a green commit with its code | Real TDD cycles (red → green → refactor) that show in `git log`; each rule can be reviewed with its own tests, and only the red commits fail `./test.sh`. |
+| D30 | `AddTask` refuses a priority that is not Low, Medium or High: 400 `priority-invalid` on `priority`, checked after BR-2 | An undefined value would never count as High and could slip past BR-5. Keeps D5's promise that a missing priority is caught. |
+| D31 | After trimming (D22), the title length is counted with `string.Length` (UTF-16 units), the same way an HTML `maxlength` counts | The screen and the API agree on the limit. An emoji counts as 2; titles are plain text, so this is accepted. |
+| D32 | A property that carries a design decision may have a `/// <summary>` explaining it (e.g. `CompletedDate`, `IdempotencyKey`) | Those reasons are likely interview questions and show on hover. Other properties keep a short `//` only when needed. |
 
 ## Open questions
 Decide in step 4: column lengths, indexes, cascade delete, seeding approach.

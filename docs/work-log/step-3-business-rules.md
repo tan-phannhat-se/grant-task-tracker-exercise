@@ -1,4 +1,4 @@
-# Work log · Step 3 · Business rules · 2026-11-11 (in progress: B1–B3 waiting for tan)
+# Work log · Step 3 · Business rules · 2026-11-11–12 (done)
 **Done:**
 - T3.1 red: 3 BR-1 tests
 - T3.1 green: BR-1 in `Grant.AddTask`, minimal `Grant.Close()` (sets Closed; BR-5 left for tan as a TODO)
@@ -13,6 +13,7 @@
 - T3.6 red: 6 BR-6 tests (7 runs) and an `IsCompletedLate` stub so they compile
 - T3.6 green: `IsOverdue(today)` (BR-6) and `IsCompletedLate` (D26) in `GrantTask`; no `NotImplementedException` left in the domain
 - T3.7: independent review by three subagents (logic · 29 mutations · consistency with brief and plan); no logic bug; 8 surviving mutations closed with 8 new tests and 3 extra asserts; `Tasks` made read-only; D22 and D25 reworded
+- T3.8: undefined priority refused in the domain (D30, test PR-1); decisions D31 (how 100 characters are counted) and D32 (summaries on decision-carrying properties)
 
 **Files touched:**
 - `backend/src/GrantTracker.Api/Domain/Grant.cs`
@@ -24,6 +25,8 @@
 - `backend/tests/GrantTracker.Tests/Domain/Br5CloseGrantTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/Br6OverdueTests.cs`
 - `backend/tests/GrantTracker.Tests/Domain/StoredFieldsTests.cs`
+- `backend/tests/GrantTracker.Tests/Domain/PriorityTests.cs`
+- `backend/src/GrantTracker.Api/Domain/ErrorCodes.cs`
 - `docs/plan.md`
 - `CLAUDE.md` (switch rule, self-check rule, rule-conflict rule)
 - `docs/ai-log.md` (entries 9 and 10)
@@ -37,7 +40,7 @@
 | 4 | T3.4 BR-4 | ✅ A repeat returns early and keeps the first date |
 | 5 | T3.5 BR-5 (tan's code) | 🔧 First version closed before checking and blocked Medium; fixed by tan after review |
 | 6 | T3.6 BR-6 | ✅ Overdue and completed late computed, never stored |
-| 7 | T3.7 independent review | 🔧 `Tasks` returned the real list → `AsReadOnly()`; `Grant` summary named every rule → fixed; ⏳ B1 invalid priority, B2 how to count characters, B3 long property comments: waiting for tan |
+| 7 | T3.7 independent review | 🔧 `Tasks` returned the real list → `AsReadOnly()`; `Grant` summary named every rule → fixed; B1–B3 decided by tan (D30–D32) |
 
 ### Test
 | # | Task | Red | Green | Break on purpose → result (all restored) |
@@ -49,10 +52,11 @@
 | 5 | T3.5 BR-5 | 2/6 failed on asserts | 24/24 | Close before the check → 1 red · no High filter → 3 red · no completion filter → 1 red |
 | 6 | T3.6 BR-6 | 7/7 failed (`NotImplementedException`) | 31/31 | `<=` → 1 red · no completion check → 3 red · late uses `>=` → 1 red |
 | 7 | T3.7 review | 29 mutations: 20 killed, 9 survived | 39/39 | The 8 survivors that matter now fail at least one new test; the 9th only changes message wording |
+| 8 | T3.8 priority | 2/2 runs failed on asserts | 42/42 | Priority check removed → 3 red · range check instead of `Enum.IsDefined` → 1 red (150) |
 
-**Missing:** B1–B3 decisions (tan) · loading a grant with its tasks before `Close()` is a step 4 test (see `plan.md`).
+**Missing:** loading a grant with its tasks before `Close()` is a step 4 test (see `plan.md`).
 
-**Test it yourself:** run all with `dotnet test backend` → 39 passed, then each group:
+**Test it yourself:** run all with `dotnet test backend` → 42 passed, then each group:
 
 | Group | Run | Expect | Break on purpose → expect (then undo) |
 |-------|-----|--------|----------------------------------------|
@@ -63,3 +67,4 @@
 | BR-5 | `dotnet test backend --filter Br5` | 6 passed | Move `Status = GrantStatus.Closed;` above the check in `Grant.Close` → BR5-1 fails |
 | BR-6 | `dotnet test backend --filter Br6` | 9 passed | `DueDate < today` → `<=` in `GrantTask.IsOverdue` → BR6-2 fails |
 | Stored fields | `dotnet test backend --filter StoredFields` | 2 passed | `IdempotencyKey = null;` in the `GrantTask` constructor → ST-1 fails |
+| Priority | `dotnet test backend --filter PriorityTests` | 3 passed | `if (!Enum.IsDefined(priority))` → `if (false)` → 3 fail |

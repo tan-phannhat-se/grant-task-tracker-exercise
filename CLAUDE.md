@@ -56,7 +56,7 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
   - **D**ependency inversion: depend on abstractions injected through the constructor for what changes or must be faked in tests (`TimeProvider`, `DbContext`).
 - **Comments: short and only where they help.**
   - Every class and public method: a `/// <summary>` on three lines (open tag, one short sentence, close tag), as Rider and Visual Studio generate it; `/** */` in TypeScript.
-  - Properties and lines: a short `//` comment only when the reason is not obvious.
+  - Properties and lines: a short `//` comment only when the reason is not obvious. Exception: a property that carries a design decision may have a `/// <summary>` explaining it (D32).
   - A line that enforces a business rule names it (e.g. `// BR-2`). No decision numbers (Dxx) or OP numbers in code; traceability lives in `docs/`.
   - Explain why, never repeat what the code says. No `<param>` blocks.
   - One type per file.
