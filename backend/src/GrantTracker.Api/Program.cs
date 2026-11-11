@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GrantTracker.Api.Data;
 using GrantTracker.Api.Endpoints;
 using GrantTracker.Api.Services;
@@ -11,6 +12,11 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<GrantTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("GrantTracker")));
+builder.Services.AddScoped<GrantService>();
+
+// Enums go out by name ("Open"), so clients do not depend on the stored numbers.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // One clock for the whole app; the tests replace it with a fake one.
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
@@ -57,7 +63,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();  // http://localhost:5080/swagger
 }
 
-// Endpoints are mapped here in later steps.
+app.MapGrantEndpoints();
 
 app.Run();
 

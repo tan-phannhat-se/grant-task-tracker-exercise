@@ -12,4 +12,5 @@ public static class ErrorCodes
     public const string TitleTooLong = "title-too-long"; // BR-3
     public const string PendingHighPriorityTasks = "pending-high-priority-tasks"; // BR-5
     public const string PriorityInvalid = "priority-invalid"; // only Low, Medium or High
+    public const string StatusInvalid = "status-invalid"; // grant list filter: Open, Closed or All
 }

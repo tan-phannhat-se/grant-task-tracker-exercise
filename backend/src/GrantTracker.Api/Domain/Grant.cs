@@ -19,6 +19,7 @@ public class Grant
     public GrantStatus Status { get; private set; }
     // A read-only wrapper: callers cannot cast it back to List and add tasks without the rules.
     public IReadOnlyCollection<GrantTask> Tasks => _tasks.AsReadOnly();
+    public int PendingTaskCount => _tasks.Count(t => !t.IsCompleted);
 
     private Grant() { } // for EF Core
 
