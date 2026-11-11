@@ -1,4 +1,4 @@
-# Code style for every editor and for `dotnet format` (D19).
+# Code style for every editor and for `dotnet format`.
 root = true
 
 [*]
@@ -14,6 +14,7 @@ trim_trailing_whitespace = false
 
 [*.{cs,csx}]
 indent_size = 4
+max_line_length = 120 # checked by test.sh
 
 # Braces on their own line (standard .NET style).
 csharp_new_line_before_open_brace = all

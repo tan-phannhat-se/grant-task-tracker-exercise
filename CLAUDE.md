@@ -53,7 +53,13 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
   - **L**iskov: prefer composition; any subtype must work wherever its base type is used.
   - **I**nterface segregation: small, focused interfaces; no "do everything" service.
   - **D**ependency inversion: depend on abstractions injected through the constructor for what changes or must be faked in tests (`TimeProvider`, `DbContext`).
-- **Comment fully.** Every class and method starts with an overview comment (`///` in C#, `/** */` in TypeScript): what it does and why. Comment the lines inside too, especially each step of the logic. A line that enforces a business rule names it (e.g. `// BR-2: due date cannot be in the past`). Keep comments short: explain why, do not repeat what the code already says.
+- **Comments: short and only where they help.**
+  - Every class and public method: a `/// <summary>` on three lines (open tag, one short sentence, close tag), as Rider and Visual Studio generate it; `/** */` in TypeScript.
+  - Properties and lines: a short `//` comment only when the reason is not obvious.
+  - A line that enforces a business rule names it (e.g. `// BR-2`). No decision numbers (Dxx) or OP numbers in code; traceability lives in `docs/`.
+  - Explain why, never repeat what the code says. No `<param>` blocks.
+  - One type per file.
+- **Line length:** at most 120 characters in C# (checked by `./test.sh`), 100 in the frontend (Prettier).
 
 ## Tests
 - xUnit, Arrange / Act / Assert, names like `AddTask_DueDateYesterday_IsRejected`.
