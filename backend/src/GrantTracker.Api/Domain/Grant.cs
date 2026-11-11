@@ -38,7 +38,18 @@ public class Grant
         DateTime createdAtUtc,
         string? idempotencyKey = null)
     {
-        throw new NotImplementedException("T3.2–T3.4");
+        // BR-1 first: when the grant is closed, fixing the input cannot help.
+        if (Status == GrantStatus.Closed)
+        {
+            throw new DomainRuleException(
+                ErrorCodes.GrantClosed,
+                DomainErrorKind.RuleRefused,
+                $"Grant {ReferenceNumber} is closed, so no task can be added.");
+        }
+
+        var task = new GrantTask(title, dueDate, priority, createdAtUtc, idempotencyKey);
+        _tasks.Add(task);
+        return task;
     }
 
     /// <summary>
@@ -46,6 +57,7 @@ public class Grant
     /// </summary>
     public void Close()
     {
-        throw new NotImplementedException("T3.6, written by tan");
+        // TODO T3.5 (tan): BR-5, refuse while a High-priority task is pending.
+        Status = GrantStatus.Closed; // closing a closed grant again changes nothing
     }
 }
