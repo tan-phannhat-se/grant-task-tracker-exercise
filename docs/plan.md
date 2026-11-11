@@ -141,8 +141,8 @@ Each endpoint is one task, done test-first like step 3: a red commit with its in
 |------|------|---------|-------|
 | T4.1 | DbContext and EF configuration (D36–D38); database created on start (D18); "today" from the configured time zone (D15) | AI | `Data/` · `Services/` · `Program.cs` |
 | T4.2 | Seed data (D33, D39, D40), with tests that it matches the brief's table | AI | `Data/` · `Program.cs` · `tests/Data/` |
-| T4.3 | API foundation: services, enums as strings, domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
-| T4.4 | `GET /grants` (status filter, pending task count) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
+| T4.3 | API foundation: domain errors → ProblemDetails (D27), integration test fixture (WebApplicationFactory, SQLite in-memory, FakeTimeProvider), start-up tests (seed only in Development, bad time zone) | AI | `Program.cs` · `Endpoints/` · `tests/Api/` |
+| T4.4 | `GET /grants` (status filter, pending task count); first service; enums as strings (moved from T4.3: first response that shows them) | AI | `Endpoints/` · `Services/` · `tests/Api/` |
 | T4.5 | `GET /grants/{id}` | AI | same |
 | T4.6 | `POST /grants/{id}/tasks` (201; missing fields handled at the boundary, D23) | AI | same |
 | T4.7 | `PUT /tasks/{id}/complete` | AI | same |
