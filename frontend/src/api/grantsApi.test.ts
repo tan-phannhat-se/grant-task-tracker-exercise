@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { addTask, ApiError, getGrants, type Task } from './grantsApi'
+import { addTask, ApiError, closeGrant, getGrants, getOverdueTasks, type Task } from './grantsApi'
 
 const savedTask: Task = {
   id: 7,
@@ -124,6 +124,46 @@ describe('grantsApi', () => {
 
     const [, init] = fetchMock.mock.calls[0]
     expect(init.headers).toMatchObject({ 'Idempotency-Key': key })
+  })
+
+  /**
+   * API-4: getGrants('Closed') → GET /api/grants?status=Closed.
+   * Catches: the filter not sent, so every grant comes back whatever the officer chose.
+   */
+  it('getGrants_WithStatus_SendsItAsTheStatusFilter', async () => {
+    fetchMock.mockResolvedValue(Response.json([]))
+
+    await getGrants('Closed')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/grants?status=Closed')
+  })
+
+  /**
+   * API-5: closeGrant(3) → PUT /api/grants/3/close.
+   * Catches: the wrong URL or method, so the grant is never closed.
+   */
+  it('closeGrant_PutsToTheGrantsCloseUrl', async () => {
+    fetchMock.mockResolvedValue(Response.json({}))
+
+    await closeGrant(3)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/grants/3/close')
+    expect(init.method).toBe('PUT')
+  })
+
+  /**
+   * API-6: getOverdueTasks('All') → GET /api/tasks/overdue?grantStatus=All.
+   * Catches: the filter sent under the grant list's name (status), which the overdue list ignores.
+   */
+  it('getOverdueTasks_SendsTheGrantStatusFilter', async () => {
+    fetchMock.mockResolvedValue(Response.json([]))
+
+    await getOverdueTasks('All')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/tasks/overdue?grantStatus=All')
   })
 })
 
