@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GrantDetail, GrantListItem, Task } from './api/grantsApi'
@@ -238,6 +238,47 @@ describe('GrantTasksScreen', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.queryByText('Verify bank details')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument()
+  })
+
+  /**
+   * FE-17: a task is added on GR-100001, and while that grant reloads the officer chooses GR-100003
+   * → GR-100003 stays shown when the late reload answers.
+   * Catches: the late reload putting GR-100001's tasks and form under GR-100003's name,
+   * so the next task goes to the wrong grant.
+   */
+  it('GrantChangedWhileReloadingAfterAdd_KeepsTheNewGrant', async () => {
+    let answerReload: (() => void) | null = null
+    let isTaskAdded = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          isTaskAdded = true
+          return fakeApi(url, init)
+        }
+        if (isTaskAdded && url === '/api/grants/1') {
+          isTaskAdded = false // only the first reload is slow
+          return new Promise<Response>((resolve) => {
+            answerReload = () => resolve(fakeApi(url, init))
+          })
+        }
+        return fakeApi(url, init)
+      }),
+    )
+    const user = userEvent.setup()
+    render(<GrantTasksScreen />)
+    await screen.findByText('Verify bank details')
+    await user.type(screen.getByLabelText('Title'), 'Review budget')
+    await user.type(screen.getByLabelText('Due date'), '2026-11-25')
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+    await waitFor(() => expect(answerReload).not.toBeNull())
+
+    await user.selectOptions(screen.getByLabelText('Grant'), 'GR-100003 · Harbour Arts Collective')
+    await screen.findByText('Final acquittal review')
+    await act(async () => answerReload?.())
+
+    expect(screen.getByText('Final acquittal review')).toBeInTheDocument()
+    expect(screen.queryByText('Verify bank details')).not.toBeInTheDocument()
   })
 
   /**
