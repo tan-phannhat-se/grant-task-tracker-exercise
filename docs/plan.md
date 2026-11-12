@@ -188,6 +188,17 @@ Each task is done test-first: a red commit with its tests, then a green commit. 
 | T6.4 | OP-3 screen: one key per filled-in form, unreachable message in the form and when loading fails (D61, D62) | AI | `frontend/src/AddTaskForm.tsx` · `frontend/src/GrantTasksScreen.tsx` + tests |
 | T6.5 | Hand check (API on port 5099), step 6 log, README notes for OP-1, OP-2, OP-4, OP-6 listed for step 7 | AI | `docs/` |
 
+### Fixes before step 7
+Found in a pre-submit end-to-end check. Test first, as in step 6. Log: `docs/work-log/step-6b-fixes.md`.
+
+| Task | Work | Code by | Files |
+|------|------|---------|-------|
+| T6.6 | BR-2 through the API: a due date yesterday → 400 `due-date-in-past` (AT-9) | AI | `tests/Api/AddTaskTests.cs` |
+| T6.7 | The reload after adding a task uses the grant load's "older answer" guard (FE-17) | AI | `frontend/src/GrantTasksScreen.tsx` + test |
+| T6.8 | Add task is disabled while a task is on its way (FE-18) | AI | `frontend/src/AddTaskForm.tsx` + test |
+| T6.9 | D64: close vs add at the same moment, README only | AI | `docs/plan.md` |
+| T6.10 | D65: the SDK pin stays; the README says to install the .NET 8 SDK (README written in step 7) | AI | `docs/plan.md` |
+
 ## Decisions
 | # | Decision | Why |
 |---|----------|-----|
@@ -254,3 +265,5 @@ Each task is done test-first: a red commit with its tests, then a green commit. 
 | D61 | "Server unreachable" = `fetch` fails, a 502/503/504, or no answer within 15 s → `ApiError` with code `server-unreachable` and "Cannot reach the server. Check your connection and try again.", shown in the form's top box (D51); the form keeps its values. No automatic retry: the officer clicks again. The Vite dev proxy answers 502 when it cannot reach the API (by default it sends a 500 with an empty body, checked by hand) | 502–504 mean a proxy answered but the API behind it did not; the dev proxy now behaves like a real one. Without a timeout a hanging request fails silently. |
 | D62 | The screen uses one key per filled-in form: kept after a failure, new when a field changes (the form is empty after a success, so the next task always gets a new key) | Clicking Add again after a network error sends the same key, so no duplicate task. |
 | D63 | `@types/node` added as a dev dependency (types only, nothing runs in the browser) | `vite.config.ts` needs Node's types to listen for the proxy's errors (D61); a hand-written type would be a cast a newcomer has to puzzle over. tan's choice; step 1 had avoided it when it was only needed for `process.env`. |
+| D64 | A grant closed while a High task is added to it at the same moment: both can succeed, leaving a Closed grant with a pending High task (breaks BR-5). Not fixed in code; the README (OP-2) explains it and the fix: a `Version` column on `Grant` (`IsConcurrencyToken()`), changed by every add and close, so the second save fails → 409 `concurrency-conflict` | tan's choice: the brief asks to explain OP-2, not build it. It needs two requests on the same grant within milliseconds; a script hits it every time, an officer rarely. |
+| D65 | `global.json` stays at 8.0.100 with `latestFeature`; the README says to install the .NET 8 SDK first. A machine with only .NET 9 or 10 cannot build or test | tan's choice: the build uses the SDK the code was written and checked with. `latestMajor` was tried: it helps only where the .NET 8 runtime is also installed; on .NET 10 alone the tests still need .NET 8, and forcing .NET 10 fails 35 tests (the ASP.NET Core 8 test server). |
