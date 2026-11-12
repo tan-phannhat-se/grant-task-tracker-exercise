@@ -4,6 +4,9 @@ export type Priority = 'Low' | 'Medium' | 'High'
 
 export type GrantStatus = 'Open' | 'Closed'
 
+/** The grant statuses a list can be filtered by; All means no filter. */
+export type GrantStatusFilter = 'All' | GrantStatus
+
 /** A task as the API returns it; the server works out overdue and completed late. */
 export interface Task {
   id: number
@@ -34,6 +37,17 @@ export interface GrantDetail {
   applicationDate: string
   status: GrantStatus
   tasks: Task[]
+}
+
+/** One task of the overdue list, with its grant; most overdue first. */
+export interface OverdueTask {
+  id: number
+  grantId: number
+  title: string
+  priority: Priority
+  referenceNumber: string
+  organisationName: string
+  daysOverdue: number
 }
 
 /** The body of "add a task". */
@@ -72,9 +86,9 @@ const requestTimeLimitMs = 15_000
 // What a proxy answers when it cannot reach the API behind it
 const proxyCannotReachApiStatuses = [502, 503, 504]
 
-/** Lists every grant, open and closed. */
-export function getGrants(): Promise<GrantListItem[]> {
-  return send('/grants')
+/** Lists the grants with the given status; without a status, every grant. */
+export function getGrants(status?: GrantStatusFilter): Promise<GrantListItem[]> {
+  return send(status === undefined ? '/grants' : `/grants?status=${status}`)
 }
 
 /** Loads one grant with its tasks. */
@@ -97,6 +111,16 @@ export function addTask(grantId: number, task: NewTask, idempotencyKey: string):
 /** Completes a task and returns it with its completed date. */
 export function completeTask(taskId: number): Promise<Task> {
   return send(`/tasks/${taskId}/complete`, { method: 'PUT' })
+}
+
+/** Closes a grant and returns it; closing a closed grant changes nothing. */
+export function closeGrant(grantId: number): Promise<GrantDetail> {
+  return send(`/grants/${grantId}/close`, { method: 'PUT' })
+}
+
+/** Lists the overdue tasks of grants with the given status, most overdue first. */
+export function getOverdueTasks(grantStatus: GrantStatusFilter): Promise<OverdueTask[]> {
+  return send(`/tasks/overdue?grantStatus=${grantStatus}`)
 }
 
 /** Sends one request and returns the JSON body, or throws an ApiError. */
