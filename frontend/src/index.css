@@ -54,3 +54,11 @@ form button {
   display: block;
   margin-top: 12px;
 }
+
+tr.clickable {
+  cursor: pointer;
+}
+
+tr.clickable:hover {
+  background: #f2f2f2;
+}
