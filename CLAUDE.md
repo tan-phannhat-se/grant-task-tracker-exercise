@@ -102,7 +102,8 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 ### Roles and limits
 - **Roles:** tan designs, decides, approves plans, reviews and commits; the AI plans and implements
   (see Roles in `docs/plan.md`).
-  - Exception: tan writes BR-5, `AI_USAGE.md` and the OP-5 health check; the AI only reviews them.
+  - Exception: tan writes BR-5 and the OP-5 health check; the AI only reviews them.
+  - `AI_USAGE.md`: the AI drafts it, tan reviews and edits it, and its first lines say so (D68).
   - For BR-5 the AI writes the tests first and gives hints when asked.
 - **Change only what tan asks to change.**
   - A question or a discussion is not a request: answer or propose, then wait.
