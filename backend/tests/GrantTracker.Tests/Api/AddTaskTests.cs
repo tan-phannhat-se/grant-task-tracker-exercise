@@ -80,6 +80,27 @@ public class AddTaskTests
     }
 
     /// <summary>
+    /// AT-9: a task due yesterday on GR-100002 → 400 due-date-in-past on field dueDate, naming today; nothing saved.
+    /// Catches: the service passing the domain a wrong "today" (e.g. too early), so a past due date is accepted.
+    /// </summary>
+    [Fact]
+    public async Task Add_DueDateYesterday_Returns400DueDateInPast()
+    {
+        using var api = new GrantTrackerApiFactory();
+
+        var response = await PostTask(api, GrantIdOf(api, "GR-100002"), $$"""
+            { "title": "Yesterday", "dueDate": "{{Day(-1)}}", "priority": "Low" }
+            """);
+
+        await AssertProblem(response, HttpStatusCode.BadRequest, "due-date-in-past", "dueDate");
+        var problem = await ReadJson(response);
+        Assert.Contains(Day(0), problem.GetProperty("detail").GetString());
+        using var scope = api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GrantTrackerDbContext>();
+        Assert.False(db.GrantTasks.Any(t => t.Title == "Yesterday"));
+    }
+
+    /// <summary>
     /// AT-4: no title in the JSON → 400 title-required on field title.
     /// Catches: a null title crashing with a 500.
     /// </summary>
