@@ -18,6 +18,8 @@ export default function GrantTasksScreen() {
   const [grants, setGrants] = useState<GrantListItem[]>([])
   const [selectedGrantId, setSelectedGrantId] = useState<number | null>(null)
   const [grant, setGrant] = useState<GrantDetail | null>(null)
+  // Goes up by one after a task is added, so the grant loads again
+  const [reloadCount, setReloadCount] = useState(0)
   // An error that does not belong to the Add task form, shown at the top of the screen
   const [screenError, setScreenError] = useState<string | null>(null)
 
@@ -34,7 +36,8 @@ export default function GrantTasksScreen() {
     if (selectedGrantId === null) {
       return
     }
-    // When the officer switches grants quickly, an older answer must not replace a newer one.
+    // An older answer must not replace a newer one: the officer may switch grants
+    // while a grant is still loading, also while it reloads after a task was added.
     let isLatest = true
     getGrant(selectedGrantId)
       .then((detail) => {
@@ -51,7 +54,7 @@ export default function GrantTasksScreen() {
     return () => {
       isLatest = false
     }
-  }, [selectedGrantId])
+  }, [selectedGrantId, reloadCount])
 
   /** Hides the shown grant at once, so its tasks and form never sit under another grant's name. */
   function handleGrantChange(grantId: number) {
@@ -60,13 +63,8 @@ export default function GrantTasksScreen() {
   }
 
   /** Loads the grant again, so a new task shows in the server's order with its flags. */
-  function reloadGrant(grantId: number) {
-    getGrant(grantId)
-      .then((detail) => {
-        setGrant(detail)
-        setScreenError(null)
-      })
-      .catch((error: unknown) => setScreenError(messageFor(error, loadErrorMessage)))
+  function reloadGrant() {
+    setReloadCount((count) => count + 1)
   }
 
   /** Completes a task and shows it as the API returns it, so a repeat keeps the first date. */
@@ -116,7 +114,7 @@ export default function GrantTasksScreen() {
           </p>
           <TaskList tasks={grant.tasks} onComplete={handleComplete} />
           {/* A new key per grant empties the form, so input and errors never carry over */}
-          <AddTaskForm key={grant.id} grantId={grant.id} onAdded={() => reloadGrant(grant.id)} />
+          <AddTaskForm key={grant.id} grantId={grant.id} onAdded={reloadGrant} />
         </section>
       )}
     </main>
