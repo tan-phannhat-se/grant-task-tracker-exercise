@@ -2,7 +2,7 @@
      Marks and limits: CLAUDE.md, Workflow step 7. -->
 # Work log · Step 6b · Fixes before step 7 · 2026-11-12 (waiting for tan's review)
 **Done:**
-- Found in a pre-submit end-to-end check; tan asked for the fixes and reviews them afterwards (tasks T6.6–T6.10 in `plan.md`)
+- Found by five tester sub-agents run end to end before submitting (own ports and database copies, repo read-only); tan asked for the fixes and reviews them afterwards (tasks T6.6–T6.10 in `plan.md`)
 - T6.6: AT-9, a due date yesterday through the API → 400 `due-date-in-past` on `dueDate`, naming today, nothing saved
 - T6.7: the reload after adding a task now goes through the grant load effect (`reloadCount`), so its "older answer" guard covers it (FE-17)
 - T6.8: Add task is disabled while a task is on its way, usable again after any answer (FE-18)

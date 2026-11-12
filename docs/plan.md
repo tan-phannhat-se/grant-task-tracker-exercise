@@ -189,7 +189,7 @@ Each task is done test-first: a red commit with its tests, then a green commit. 
 | T6.5 | Hand check (API on port 5099), step 6 log, README notes for OP-1, OP-2, OP-4, OP-6 listed for step 7 | AI | `docs/` |
 
 ### Fixes before step 7
-Found in a pre-submit end-to-end check. Test first, as in step 6. Log: `docs/work-log/step-6b-fixes.md`.
+Found by five tester sub-agents run end to end before submitting (endpoints, rules, operations, browser, code review). Test first, as in step 6. Log: `docs/work-log/step-6b-fixes.md`.
 
 | Task | Work | Code by | Files |
 |------|------|---------|-------|
@@ -267,3 +267,4 @@ Found in a pre-submit end-to-end check. Test first, as in step 6. Log: `docs/wor
 | D63 | `@types/node` added as a dev dependency (types only, nothing runs in the browser) | `vite.config.ts` needs Node's types to listen for the proxy's errors (D61); a hand-written type would be a cast a newcomer has to puzzle over. tan's choice; step 1 had avoided it when it was only needed for `process.env`. |
 | D64 | A grant closed while a High task is added to it at the same moment: both can succeed, leaving a Closed grant with a pending High task (breaks BR-5). Not fixed in code; the README (OP-2) explains it and the fix: a `Version` column on `Grant` (`IsConcurrencyToken()`), changed by every add and close, so the second save fails → 409 `concurrency-conflict` | tan's choice: the brief asks to explain OP-2, not build it. It needs two requests on the same grant within milliseconds; a script hits it every time, an officer rarely. |
 | D65 | `global.json` stays at 8.0.100 with `latestFeature`; the README says to install the .NET 8 SDK first. A machine with only .NET 9 or 10 cannot build or test | tan's choice: the build uses the SDK the code was written and checked with. `latestMajor` was tried: it helps only where the .NET 8 runtime is also installed; on .NET 10 alone the tests still need .NET 8, and forcing .NET 10 fails 35 tests (the ASP.NET Core 8 test server). |
+| D66 | "Today" is read twice in add, complete and the overdue list (service and endpoint), and `daysOverdue` is computed in `OverdueTaskResponse`, not in the domain. Not fixed in code; the README names it as a known trade-off and the fix: the service reads today once and returns it with its result, `GrantTask.DaysOverdue(today)` in the domain, endpoints without the calendar | tan's choice: the two reads can only disagree within milliseconds of midnight, and the fix touches three layers on the submission day. |
