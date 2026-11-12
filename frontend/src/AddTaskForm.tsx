@@ -22,6 +22,8 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
   // One key per filled-in form: clicking Add again after a failure sends the same key,
   // so a request that did reach the server never adds the task twice.
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
+  // True while a task is on its way: a double-click must not send it twice
+  const [isSending, setIsSending] = useState(false)
 
   /**
    * A new key once the form holds a different task: after any edit.
@@ -44,6 +46,7 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
       return
     }
 
+    setIsSending(true)
     addTask(grantId, { title: trimmedTitle, dueDate, priority }, idempotencyKey)
       .then(() => {
         setTitle('')
@@ -51,6 +54,7 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
         onAdded()
       })
       .catch(showApiError)
+      .finally(() => setIsSending(false))
   }
 
   /** Shows the API's message under the input it names, or at the top of the form. */
@@ -129,7 +133,9 @@ export default function AddTaskForm({ grantId, onAdded }: AddTaskFormProps) {
         <option>High</option>
       </select>
 
-      <button type="submit">Add task</button>
+      <button type="submit" disabled={isSending}>
+        Add task
+      </button>
     </form>
   )
 }
