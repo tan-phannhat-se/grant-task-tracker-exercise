@@ -1,6 +1,6 @@
 # Work log · Step 5b · Frontend views · 2026-11-12 (done)
 **Done:**
-- tan found the step 5 screen missed the brief's views; AI log entry; plan and test list approved, D67 (replaces D50's drop-down)
+- tan found the step 5 screen left two endpoints (close, overdue) without a screen; AI log entry; plan and test list approved, D67 (replaces D50's drop-down)
 - Three views in `App`: Grant list (status filter, pending count) → Grant detail (tasks, Add, Complete, Close grant) ← Overdue tasks across grants; each list keeps its filter after Back
 - T5b.4 (Grant detail) and T5b.5 (Overdue) built in two sessions at once (tan's request), each limited to its own two files; their results rechecked here (tests, breaks, browser)
 - An independent reviewer sub-agent read the Grant list; its findings fixed (keyboard button, filter held by `App`, FE-22 split)

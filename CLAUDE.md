@@ -42,7 +42,7 @@ backend/tests/GrantTracker.Tests/
   Services/   unit tests of services that need no database (e.g. today in the configured time zone)
   Data/       EF Core mapping against SQLite in-memory: fields, unique indexes, delete behaviour
   Api/        integration tests: WebApplicationFactory + SQLite in-memory + FakeTimeProvider
-frontend/src/  one screen; API client in one typed module
+frontend/src/  three views (grant list, grant detail, overdue tasks) switched in App; API client in one typed module
 ```
 Dependencies point inwards: Endpoints → Services → Domain. Domain depends on nothing.
 
@@ -103,7 +103,6 @@ Dependencies point inwards: Endpoints → Services → Domain. Domain depends on
 - **Roles:** tan designs, decides, approves plans, reviews and commits; the AI plans and implements
   (see Roles in `docs/plan.md`).
   - Exception: tan writes BR-5 and the OP-5 health check; the AI only reviews them.
-  - `AI_USAGE.md`: the AI drafts it, tan reviews and edits it, and its first lines say so (D68).
   - For BR-5 the AI writes the tests first and gives hints when asked.
 - **Change only what tan asks to change.**
   - A question or a discussion is not a request: answer or propose, then wait.

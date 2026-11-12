@@ -1,7 +1,7 @@
 # Plan
 
 ## Scope
-One screen for working on a grant's tasks, backed by a small API.
+Three views for working on grants and their tasks, backed by a small API. The brief needs one grant screen; the grant list and the overdue view are optional extras tan chose (D67).
 
 - **Endpoints:** list grants (optional status filter, pending task count), get one grant with its tasks, add a task, complete a task, close a grant, list overdue tasks (most overdue first).
 - **Business rules:**
@@ -200,7 +200,7 @@ Found by five tester sub-agents run end to end before submitting (endpoints, rul
 | T6.10 | D65: the SDK pin stays; the README says to install the .NET 8 SDK (README written in step 7) | AI | `docs/plan.md` |
 
 ### Step 5b · Frontend views
-The step 5 screen had one grant drop-down and missed three of the brief's views (ai-log). Test first, as in step 5. T5b.4 and T5b.5 ran in their own sessions at the same time, each on its own files. Log: `docs/work-log/step-5b-views.md`.
+The step 5 screen had one grant drop-down and covered 4 of 6 endpoints (ai-log); tan chose to add the brief's optional grant list and Close grant, and an overdue view. Test first, as in step 5. T5b.4 and T5b.5 ran in their own sessions at the same time, each on its own files. Log: `docs/work-log/step-5b-views.md`.
 
 | Task | Work | Code by | Files |
 |------|------|---------|-------|
@@ -229,7 +229,7 @@ The step 5 screen had one grant drop-down and missed three of the brief's views 
 | D13 | Closing a closed grant → `200`, unchanged | Same reason as D12. |
 | D14 | `GET /tasks/overdue?grantStatus=All\|Open\|Closed`, default `Open` | The brief is silent on closed grants. A filter keeps every task reachable, and the default shows only work officers can still act on. |
 | D15 | "Today" = one configurable time zone (default UTC; `Australia/Sydney` when live) | One API serves every office, so it can't be per office. Per-office time zone header noted as a next step. |
-| D16 | Errors: 400 bad input · 404 not found · 409 rule refused; ProblemDetails with a `code` | 400 = fix your input. 409 = the current state forbids it. |
+| D16 | Errors: 400 bad input · 404 not found · 409 rule refused · 422 idempotency key reused for a different request (added by D58); ProblemDetails with a `code` | 400 = fix your input. 409 = the current state forbids it. |
 | D17 | `Grant.Status` stored as gapped ints: Open = 100, Closed = 200 | Same rule as `Priority` (D5): one convention for every enum. |
 | D18 | `EnsureCreated`; Development recreates and reseeds on start; never deletes elsewhere | Seed dates stay relative to today. OP-1: no data loss on restart. Migrations before going live. |
 | D19 | Code style: C# uses the standard .NET style (4 spaces, braces on their own line) via `.editorconfig` + `dotnet format`; the frontend uses Prettier. `./test.sh` fails on badly formatted code | tan chose the .NET default style: what C# reviewers expect. A checked format keeps AI-written and hand-written code identical. |
@@ -280,4 +280,4 @@ The step 5 screen had one grant drop-down and missed three of the brief's views 
 | D64 | A grant closed while a High task is added to it at the same moment: both can succeed, leaving a Closed grant with a pending High task (breaks BR-5). Not fixed in code; the README (OP-2) explains it and the fix: a `Version` column on `Grant` (`IsConcurrencyToken()`), changed by every add and close, so the second save fails → 409 `concurrency-conflict` | tan's choice: the brief asks to explain OP-2, not build it. It needs two requests on the same grant within milliseconds; a script hits it every time, an officer rarely. |
 | D65 | `global.json` stays at 8.0.100 with `latestFeature`; the README says to install the .NET 8 SDK first. A machine with only .NET 9 or 10 cannot build or test | tan's choice: the build uses the SDK the code was written and checked with. `latestMajor` was tried: it helps only where the .NET 8 runtime is also installed; on .NET 10 alone the tests still need .NET 8, and forcing .NET 10 fails 35 tests (the ASP.NET Core 8 test server). |
 | D66 | "Today" is read twice in add, complete and the overdue list (service and endpoint), and `daysOverdue` is computed in `OverdueTaskResponse`, not in the domain. Not fixed in code; the README names it as a known trade-off and the fix: the service reads today once and returns it with its result, `GrantTask.DaysOverdue(today)` in the domain, endpoints without the calendar | tan's choice: the two reads can only disagree within milliseconds of midnight, and the fix touches three layers on the submission day. |
-| D67 | Three views, switched in `App` without a router: **Grant list** (status filter, default All; pending task count; a row or its reference button opens the grant), **Grant detail** (tasks, Add task, `Close grant` only on an Open grant, `← Back` to the list it came from), **Overdue tasks** across grants (grant status filter, default Open as the API; priority and days overdue; a row opens its grant). Each list's filter is held in `App`, so it stays after Back. Close is not disabled while sending: closing twice changes nothing (D13). Replaces D50's drop-down | The brief asks for these views; step 5 missed them. No router: no new package for three views. Trade-off: the browser's Back button and a link to one grant do not work. |
+| D67 | Three views, switched in `App` without a router: **Grant list** (status filter, default All; pending task count; a row or its reference button opens the grant), **Grant detail** (tasks, Add task, `Close grant` only on an Open grant, `← Back` to the list it came from), **Overdue tasks** across grants (grant status filter, default Open as the API; priority and days overdue; a row opens its grant). Each list's filter is held in `App`, so it stays after Back. Close is not disabled while sending: closing twice changes nothing (D13). Replaces D50's drop-down | The brief needs only one grant screen; it lists a grant list with a filter and Close grant as optional extras. tan chose to build them, and an overdue view, so every endpoint has a screen (step 5 used 4 of 6). No router: no new package for three views. Trade-off: the browser's Back button and a link to one grant do not work. |
