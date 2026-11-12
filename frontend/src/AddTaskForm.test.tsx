@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from './api/grantsApi'
@@ -211,6 +211,35 @@ describe('AddTaskForm safe retries', () => {
     expect(keyOfCall(0)).toMatch(uuidPattern)
     expect(keyOfCall(1)).toBe(keyOfCall(0))
     expect(keyOfCall(2)).not.toBe(keyOfCall(0))
+  })
+
+  /**
+   * FE-18: a double-click on Add task while the first request is on its way → one request;
+   * the button is disabled until the answer comes, then usable again.
+   * Catches: a second request with the same key; when both reach the server at once, the second
+   * gets a 500 and the officer sees an error for a task that was added.
+   */
+  it('DoubleClickWhileSending_SendsOneRequest', async () => {
+    let answer: (() => void) | null = null
+    fetchMock.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          answer = () => resolve(Response.json(savedTask, { status: 201 }))
+        }),
+    )
+    const user = userEvent.setup()
+    render(<AddTaskForm grantId={1} onAdded={() => {}} />)
+    await user.click(screen.getByLabelText('Title'))
+    await user.paste('Check documents')
+    await user.type(screen.getByLabelText('Due date'), '2026-11-20')
+    const addButton = screen.getByRole('button', { name: 'Add task' })
+
+    await user.dblClick(addButton)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(addButton).toBeDisabled()
+    await act(async () => answer?.())
+    expect(addButton).toBeEnabled()
   })
 
   /**
